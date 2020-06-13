@@ -2,6 +2,7 @@
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Query;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -76,6 +77,58 @@ namespace ReplaceAttributeXmPlugin.Helper
             var resp = (RetrieveEntityResponse)service.Execute(req);
 
             return resp.EntityMetadata;
+        }
+        public static IEnumerable<Entity> GetAllUserViews(IOrganizationService service, int? objectTypeCode, string attributeName)
+        {
+            try
+            {
+                string fetch = string.Format(@"<fetch>
+	                                        <entity name='userquery' >
+		                                        <attribute name='userqueryid' />
+		                                        <attribute name='name' />
+		                                        <attribute name='fetchxml' />
+		                                        <attribute name='returnedtypecode' />
+		                                        <attribute name='layoutxml' />
+                                                <attribute name='createdby' />
+                                                <attribute name='ownerid' />
+		                                        <filter type='and' >
+			                                        <condition attribute='returnedtypecode' operator='eq' value='{0}' />
+			                                        <filter type='or' >
+				                                        <condition attribute='layoutxml' operator='like' value='%{1}%' />
+				                                        <condition attribute='fetchxml' operator='like' value='%{1}%' />
+			                                        </filter>
+		                                        </filter>
+	                                        </entity>
+                                        </fetch>", objectTypeCode, attributeName);
+                EntityCollection result = service.RetrieveMultiple(new FetchExpression(fetch));
+                return result.Entities;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        public static IEnumerable<Entity> GetAllSystemUsers(IOrganizationService service)
+        {
+            string fetch = string.Format(@"<fetch version='1.0' output-format='xml-platform' mapping='logical' distinct='false'>
+                                              <entity name='systemuser'>
+                                                <attribute name='fullname' />
+                                                <attribute name='businessunitid' />
+                                                <attribute name='systemuserid' />
+                                                <attribute name='domainname' />
+                                                <attribute name='islicensed' />
+                                                <order attribute='fullname' descending='false' />
+                                                <filter type='and'>
+                                                  <condition attribute='isdisabled' operator='eq' value='0' />
+                                                  <condition attribute='accessmode' operator='not-in'>
+                                                    <value>5</value>
+                                                    <value>4</value>
+                                                  </condition>
+                                                </filter>
+                                              </entity>
+                                            </fetch>");
+            EntityCollection result = service.RetrieveMultiple(new FetchExpression(fetch));
+            return result.Entities;
         }
     }
 }

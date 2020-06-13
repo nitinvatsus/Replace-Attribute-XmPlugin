@@ -1,20 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
 using System.Data;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using XrmToolBox.Extensibility;
-using Microsoft.Xrm.Sdk.Query;
 using Microsoft.Xrm.Sdk;
 using McTools.Xrm.Connection;
 using ReplaceAttributeXmPlugin.Helper;
 using Microsoft.Xrm.Sdk.Metadata;
-using System.Xml;
-using Microsoft.Crm.Sdk.Messages;
 
 namespace ReplaceAttributeXmPlugin
 {
@@ -72,7 +66,7 @@ namespace ReplaceAttributeXmPlugin
         }
         #endregion
 
-        #region Load Metadat Information
+        #region Load Metadata Information
         
         private void LoadEntities()
         {
@@ -215,7 +209,7 @@ namespace ReplaceAttributeXmPlugin
                                 foreach (Entity objFormEntity in formEntity)
                                 {
                                     string layoutXml = (string)objFormEntity["formxml"];
-                                    if (FindXMLControl(layoutXml, attribute.LogicalName, "control", "id"))
+                                    if (XmlOperation.FindXMLControl(layoutXml, attribute.LogicalName, "control", "id"))
                                     {
                                         var displayName = "";
                                         if (objFormEntity.Attributes.Contains("name"))
@@ -298,13 +292,13 @@ namespace ReplaceAttributeXmPlugin
                                 foreach (Entity objViewEntity in viewEntities)
                                 {
                                     string layoutXml = (string)objViewEntity["layoutxml"];
-                                    bool IsFound = FindXMLControl(layoutXml, attributeName, "cell", "name");
+                                    bool IsFound = XmlOperation.FindXMLControl(layoutXml, attributeName, "cell", "name");
                                     if (!IsFound)
                                     {
                                         layoutXml = (string)objViewEntity["fetchxml"];
-                                        IsFound = FindXMLControl(layoutXml, attributeName, "attribute", "name");
+                                        IsFound = XmlOperation.FindXMLControl(layoutXml, attributeName, "attribute", "name");
                                         if (!IsFound)
-                                            IsFound = FindXMLControl(layoutXml, attributeName, "condition", "attribute");
+                                            IsFound = XmlOperation.FindXMLControl(layoutXml, attributeName, "condition", "attribute");
                                     }
                                     if (IsFound)
                                     {
@@ -374,17 +368,7 @@ namespace ReplaceAttributeXmPlugin
                 }
             }
         }
-        private bool FindXMLControl(string formXml, string attributeName, string elementTagName, string searchElementProperty)
-        {
-            XmlDocument doc = new XmlDocument();
-            doc.LoadXml(formXml);
-            var allControls = doc.GetElementsByTagName(elementTagName);
-            var control = allControls.Cast<XmlNode>().Where(p => p.Attributes[searchElementProperty].InnerText == attributeName);
-            if (control != null && control.Count() > 0)
-                return true;
-            else
-                return false;
-        }
+        
         private ListViewItem GetAttribuetListItem(AttributeMetadata attribute, string displayName, string attributeType)
         {
             var lvItem = new ListViewItem()
@@ -608,200 +592,47 @@ namespace ReplaceAttributeXmPlugin
         }
         #endregion
 
-        #region Find Control in Xml Document
-        private XmlOperationResult PerformXMLOperation(string xmlString, string attributeName, string elementTagName, string searchElementProperty)
-        {
-            XmlDocument doc = new XmlDocument();
-            doc.LoadXml(xmlString);
-            var allControls = doc.GetElementsByTagName(elementTagName);
-            var control = allControls.Cast<XmlNode>().Where(p => p.Attributes[searchElementProperty].InnerText == attributeName);
-            if (control != null && control.Count() > 0)
-            {
-                control.FirstOrDefault().ParentNode.RemoveChild(control.FirstOrDefault());
-                return (new XmlOperationResult(doc.InnerXml, true));
-            }
-            return (new XmlOperationResult("", false));
-        }
-
-        private XmlOperationResult PerformXMLOperation(string formXml, string attributeName, string elementTagName, string searchElementProperty, string searchNodeName)
-        {
-            XmlDocument doc = new XmlDocument();
-            doc.LoadXml(formXml);
-            var allControls = doc.GetElementsByTagName(elementTagName);
-            var control = allControls.Cast<XmlNode>().Where(p => p.Attributes[searchElementProperty].InnerText == attributeName);
-            if (control != null && control.Count() > 0)
-            {
-                if (control.FirstOrDefault().ParentNode != null && control.FirstOrDefault().ParentNode.Name == searchNodeName)
-                {
-                    control.FirstOrDefault().ParentNode.RemoveChild(control.FirstOrDefault());
-                    return (new XmlOperationResult(doc.InnerXml, true));
-                }
-                else
-                {
-                    XmlNode findNode = FindControlParentNode(control.FirstOrDefault(), searchNodeName);
-                    if (findNode != null && findNode.Name == searchNodeName)
-                    {
-                        findNode.ParentNode.RemoveChild(findNode);
-                        return (new XmlOperationResult(doc.InnerXml, true));
-                    }
-                }
-            }
-            return (new XmlOperationResult("", false));
-        }
-        private XmlNode FindControlParentNode(XmlNode ControlNode, string searchNodeName)
-        {
-            XmlNode findNode = null;
-            if (ControlNode != null)
-            {
-                findNode = ControlNode.ParentNode;
-                int parentCount = 0;
-                do
-                {
-                    if (findNode == null)
-                        break;
-                    if (parentCount > 5)
-                        break;
-
-                    findNode = findNode.ParentNode;
-                    parentCount++;
-                } while (findNode.Name != searchNodeName);
-            }
-            return findNode;
-        }
-
-        #endregion
-
         #region Delete CRM Dependency from CRM SystemForm and SystemView
-        private bool DeleteFormDependency(string attributeName)
-        {
-            bool IsPublish = false;
-            foreach (ListViewItem Item in listViewForms.CheckedItems)
-            {
-                Entity objEnt = (Entity)Item.Tag;
-                if (objEnt.Attributes.Contains("formxml"))
-                {
-                    string layoutXml = (string)objEnt["formxml"];
-                    XmlOperationResult objResult = PerformXMLOperation(layoutXml, attributeName, "control", "id", "row");
-                    objEnt["formxml"] = objResult.PublishXml;
-                    if (objResult.IsPublish)
-                    {
-                        WorkAsync(new WorkAsyncInfo
-                        {
-                            Message = "Updaing Form Xml for " + Item.Text,
-
-                            Work = (bw, e) =>
-                            {
-                                Service.Update(objEnt);
-                            },
-                            PostWorkCallBack = e =>
-                            {
-                                if (e.Error != null)
-                                {
-                                    MessageBox.Show(ParentForm, e.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                                }
-                            }
-                        });
-                    }
-                    IsPublish = objResult.IsPublish;
-                }
-            }
-            return IsPublish;
-        }
-        private bool DeleteViewDependency(string attributeName)
-        {
-            bool isPublish = false;
-            foreach (ListViewItem Item in listViewView.CheckedItems)
-            {
-                XmlResults objResult = new XmlResults(false);
-                Entity objEnt = (Entity)Item.Tag;
-                if (objEnt.Attributes.Contains("layoutxml"))
-                {
-                    string layoutXml = (string)objEnt["layoutxml"];
-                    ////Remove Column from View
-                    XmlOperationResult opResult = PerformXMLOperation(layoutXml, attributeName, "cell", "name");
-                    objResult.IsPublish = opResult.IsPublish;
-                    objResult.LayoutXml = opResult.PublishXml;
-                }
-                if (objEnt.Attributes.Contains("fetchxml"))
-                {
-                    //Remove Attribute from fetchxml
-                    string layoutXml = (string)objEnt["fetchxml"];
-                    XmlOperationResult opResult = PerformXMLOperation(layoutXml, attributeName, "attribute", "name");
-                    if (!objResult.IsPublish)
-                        objResult.IsPublish = opResult.IsPublish;
-                    objResult.FetchXml = opResult.PublishXml;
-                    //Remove Condition from fetchxml
-                    opResult = PerformXMLOperation(layoutXml, attributeName, "condition", "attribute");
-                    if (!objResult.IsPublish)
-                        objResult.IsPublish = opResult.IsPublish;
-                    objResult.FetchXml = opResult.PublishXml;
-                }
-                if (objResult.IsPublish)
-                {
-                    if (objResult.LayoutXml != string.Empty)
-                        objEnt["layoutxml"] = objResult.LayoutXml;
-                    if (objResult.FetchXml != string.Empty)
-                        objEnt["fetchxml"] = objResult.FetchXml;
-                    
-                    WorkAsync(new WorkAsyncInfo
-                    {
-                        Message = "Updaing View Xml for " + Item.Text,
-
-                        Work = (bw, e) =>
-                        {
-                            Service.Update(objEnt);
-                        },
-                        PostWorkCallBack = e =>
-                        {
-                            if (e.Error != null)
-                            {
-                                MessageBox.Show(ParentForm, e.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            }
-                        }
-                    });
-                }
-                isPublish = objResult.IsPublish;
-            }
-            return isPublish;
-        }
+        
         private void TbDeleteSelectedDependency_Click(object sender, EventArgs e)
         {
-            if (listViewAttributes.SelectedItems.Count > 0)
+            if (listViewEntities.SelectedItems.Count > 0)
             {
                 var EntityItem = (EntityMetadata)listViewEntities.SelectedItems[0].Tag;
                 if (listViewAttributes.SelectedItems.Count > 0)
                 {
                     var lstItem = listViewAttributes.SelectedItems[0];
                     var subitem = lstItem.SubItems[1].Text;
-
-                    bool IsPublish = DeleteFormDependency(subitem);
-
-                    if (!IsPublish)
-                        IsPublish = DeleteViewDependency(subitem);
-                    else
-                        DeleteViewDependency(subitem);
-
-                    if (IsPublish)
+                    XmlRequest objRequest = new XmlRequest()
                     {
-                        string paramXml = string.Format(" <importexportxml><entities><entity>{0}</entity></entities><nodes/><securityroles/><settings/><workflows/></importexportxml>", EntityItem.LogicalName);
-                        WorkAsync(new WorkAsyncInfo
-                        {
-                            Message = "Publishing Entity  " + EntityItem.LogicalName,
-                            Work = (bw, ex) =>
-                            {
-                                Service.Execute(new PublishXmlRequest
-                                {
-                                    ParameterXml = paramXml
-                                });
-                            },
-                            PostWorkCallBack = ex =>
-                            {
-                                if (ex.Error != null)
-                                {
-                                    MessageBox.Show(ParentForm, ex.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                                }
-                            }
-                        });
+                        IsUserView = false,
+                        Objentity = EntityItem,
+                        ObjPlugin = this,
+                        ServiceProxy = Service,
+                        OldAttributeName = subitem,
+                        ReplaceAttributeName = string.Empty,
+                        IsViewDependency = false,
+                        CheckedFromItems = null,
+                        CheckedItemsViews = null,
+                        ObjAttDataReplace = null
+                    };
+
+                    if (listViewView.CheckedItems.Count > 0 && listViewForms.CheckedItems.Count > 0)
+                    {
+                        objRequest.CheckedFromItems = listViewForms.CheckedItems.Cast<ListViewItem>().ToList();
+                        objRequest.CheckedItemsViews = listViewView.CheckedItems.Cast<ListViewItem>().ToList();
+                        objRequest.IsViewDependency = true;
+                        XmlOperation.DeleteFormDependency(objRequest);
+                    }
+                    else if (listViewForms.CheckedItems.Count > 0)
+                    {
+                        objRequest.CheckedFromItems = listViewForms.CheckedItems.Cast<ListViewItem>().ToList();
+                        XmlOperation.DeleteFormDependency(objRequest);
+                    }
+                    else if (listViewView.CheckedItems.Count > 0)
+                    {
+                        objRequest.CheckedItemsViews = listViewView.CheckedItems.Cast<ListViewItem>().ToList();
+                        XmlOperation.DeleteViewDependency(objRequest);
                     }
                 }
                 else
@@ -841,7 +672,7 @@ namespace ReplaceAttributeXmPlugin
         {
             EnableDependencyOperation();
         }
-        private void listViewView_ItemChecked(object sender, ItemCheckedEventArgs e)
+        private void ListViewView_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
             EnableDependencyOperation();
         }
@@ -851,9 +682,74 @@ namespace ReplaceAttributeXmPlugin
         }
         #endregion
 
-        private void tbReplaceSelectedDependency_Click(object sender, EventArgs e)
+        private void TbReplaceSelectedDependency_Click(object sender, EventArgs e)
         {
+            if (listViewEntities.SelectedItems.Count > 0)
+            {
+                var EntityItem = (EntityMetadata)listViewEntities.SelectedItems[0].Tag;
+                if (listViewAttributesReplaced.SelectedItems.Count > 0)
+                {
+                    if (listViewAttributes.SelectedItems.Count > 0)
+                    {
+                        var lstItem = listViewAttributes.SelectedItems[0];
+                        var subitem = lstItem.SubItems[1].Text;
+                        var lstItemReplace = listViewAttributesReplaced.SelectedItems[0];
+                        var subitemReplace = lstItemReplace.SubItems[1].Text;
+                        AttributeMetadata objAttData = (AttributeMetadata)lstItemReplace.Tag;
 
+                        XmlRequest objRequest = new XmlRequest()
+                        {
+                            IsUserView = false,
+                            Objentity = EntityItem,
+                            ObjPlugin = this,
+                            ServiceProxy = Service,
+                            OldAttributeName = subitem,
+                            ReplaceAttributeName = subitemReplace,
+                            ObjAttDataReplace = objAttData,
+                            IsViewDependency = false,
+                            CheckedFromItems = null,
+                            CheckedItemsViews = null
+                        };
+
+                        if (listViewView.CheckedItems.Count > 0 && listViewForms.CheckedItems.Count > 0)
+                        {
+                            objRequest.CheckedFromItems = listViewForms.CheckedItems.Cast<ListViewItem>().ToList();
+                            objRequest.CheckedItemsViews = listViewView.CheckedItems.Cast<ListViewItem>().ToList();
+                            objRequest.IsViewDependency = true;
+                            XmlOperation.ReplaceFormDependency(objRequest);
+                        }
+                        else if (listViewForms.CheckedItems.Count > 0)
+                        {
+                            objRequest.CheckedFromItems = listViewForms.CheckedItems.Cast<ListViewItem>().ToList();
+                            XmlOperation.ReplaceFormDependency(objRequest);
+                        }
+                        else if (listViewView.CheckedItems.Count > 0)
+                        {
+                            objRequest.CheckedItemsViews = listViewView.CheckedItems.Cast<ListViewItem>().ToList();
+                            XmlOperation.ReplaceViewDependency(objRequest);
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("Please Select Attribute First");
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Please Select Replace Attribute First");
+                }
+            }
+            else
+            {
+                MessageBox.Show("Please Select Entity First");
+            }
         }
+
+        private void toolStripButton2_Click(object sender, EventArgs e)
+        {
+           
+        }
+
+        
     }
 }

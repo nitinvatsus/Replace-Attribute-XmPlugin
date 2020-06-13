@@ -70,6 +70,7 @@
             this.listViewForms = new System.Windows.Forms.ListView();
             this.FormName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.State = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.toolStripButton2 = new System.Windows.Forms.ToolStripButton();
             this.toolStripMenu.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -88,7 +89,8 @@
             this.toolStripButton1,
             this.tbLoadDependency,
             this.tbDeleteSelectedDependency,
-            this.tbReplaceSelectedDependency});
+            this.tbReplaceSelectedDependency,
+            this.toolStripButton2});
             this.toolStripMenu.Location = new System.Drawing.Point(0, 0);
             this.toolStripMenu.Name = "toolStripMenu";
             this.toolStripMenu.Size = new System.Drawing.Size(1799, 31);
@@ -120,7 +122,7 @@
             // tbLoadDependency
             // 
             this.tbLoadDependency.Enabled = false;
-            this.tbLoadDependency.Image = ((System.Drawing.Image)(resources.GetObject("tbLoadDependency.Image")));
+            this.tbLoadDependency.Image = global::ReplaceAttributeXmPlugin.Properties.Resources.icon_032;
             this.tbLoadDependency.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tbLoadDependency.Name = "tbLoadDependency";
             this.tbLoadDependency.Size = new System.Drawing.Size(130, 28);
@@ -145,7 +147,7 @@
             this.tbReplaceSelectedDependency.Name = "tbReplaceSelectedDependency";
             this.tbReplaceSelectedDependency.Size = new System.Drawing.Size(192, 28);
             this.tbReplaceSelectedDependency.Text = "Replace Selected Dependency";
-            this.tbReplaceSelectedDependency.Click += new System.EventHandler(this.tbReplaceSelectedDependency_Click);
+            this.tbReplaceSelectedDependency.Click += new System.EventHandler(this.TbReplaceSelectedDependency_Click);
             // 
             // groupBox2
             // 
@@ -425,7 +427,7 @@
             this.listViewView.Tag = "0";
             this.listViewView.UseCompatibleStateImageBehavior = false;
             this.listViewView.View = System.Windows.Forms.View.Details;
-            this.listViewView.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.listViewView_ItemChecked);
+            this.listViewView.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.ListViewView_ItemChecked);
             // 
             // ViewName
             // 
@@ -483,6 +485,15 @@
             this.State.Tag = "State";
             this.State.Text = "State";
             this.State.Width = 100;
+            // 
+            // toolStripButton2
+            // 
+            this.toolStripButton2.Image = global::ReplaceAttributeXmPlugin.Properties.Resources.cv_IconWeekListTeam32;
+            this.toolStripButton2.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton2.Name = "toolStripButton2";
+            this.toolStripButton2.Size = new System.Drawing.Size(115, 28);
+            this.toolStripButton2.Text = "Load User View";
+            this.toolStripButton2.Click += new System.EventHandler(this.toolStripButton2_Click);
             // 
             // ReplaceAttributeControl
             // 
@@ -552,5 +563,6 @@
         private System.Windows.Forms.ToolStripButton tbLoadDependency;
         private System.Windows.Forms.ToolStripButton tbDeleteSelectedDependency;
         private System.Windows.Forms.ToolStripButton tbReplaceSelectedDependency;
+        private System.Windows.Forms.ToolStripButton toolStripButton2;
     }
 }

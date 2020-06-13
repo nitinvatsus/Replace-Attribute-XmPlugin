@@ -73,6 +73,36 @@ namespace ReplaceAttributeXmPlugin.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap cv_IconWeekListTeam32 {
+            get {
+                object obj = ResourceManager.GetObject("cv_IconWeekListTeam32", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap dependencies1 {
+            get {
+                object obj = ResourceManager.GetObject("dependencies1", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap icon_032 {
+            get {
+                object obj = ResourceManager.GetObject("icon_032", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap importFormXmlsFromFileToolStripMenuItem_Image {
             get {
                 object obj = ResourceManager.GetObject("importFormXmlsFromFileToolStripMenuItem.Image", resourceCulture);
