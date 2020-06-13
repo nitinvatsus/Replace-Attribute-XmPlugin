@@ -28,8 +28,8 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.ListViewGroup listViewGroup21 = new System.Windows.Forms.ListViewGroup("Custom", System.Windows.Forms.HorizontalAlignment.Left);
-            System.Windows.Forms.ListViewGroup listViewGroup22 = new System.Windows.Forms.ListViewGroup("System", System.Windows.Forms.HorizontalAlignment.Left);
+            System.Windows.Forms.ListViewGroup listViewGroup23 = new System.Windows.Forms.ListViewGroup("Custom", System.Windows.Forms.HorizontalAlignment.Left);
+            System.Windows.Forms.ListViewGroup listViewGroup24 = new System.Windows.Forms.ListViewGroup("System", System.Windows.Forms.HorizontalAlignment.Left);
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FromUserView));
             this.lblProgress = new System.Windows.Forms.Label();
             this.ViewName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -67,7 +67,7 @@
             // 
             this.ViewName.Tag = "ViewName";
             this.ViewName.Text = "View Name";
-            this.ViewName.Width = 350;
+            this.ViewName.Width = 450;
             // 
             // CmdCheckAllViews
             // 
@@ -156,15 +156,15 @@
             this.domainname,
             this.islicensed});
             this.listViewSystemUsers.FullRowSelect = true;
-            listViewGroup21.Header = "Custom";
-            listViewGroup21.Name = "Custom";
-            listViewGroup21.Tag = "Custom";
-            listViewGroup22.Header = "System";
-            listViewGroup22.Name = "System";
-            listViewGroup22.Tag = "System";
+            listViewGroup23.Header = "Custom";
+            listViewGroup23.Name = "Custom";
+            listViewGroup23.Tag = "Custom";
+            listViewGroup24.Header = "System";
+            listViewGroup24.Name = "System";
+            listViewGroup24.Tag = "System";
             this.listViewSystemUsers.Groups.AddRange(new System.Windows.Forms.ListViewGroup[] {
-            listViewGroup21,
-            listViewGroup22});
+            listViewGroup23,
+            listViewGroup24});
             this.listViewSystemUsers.HideSelection = false;
             this.listViewSystemUsers.Location = new System.Drawing.Point(10, 112);
             this.listViewSystemUsers.Margin = new System.Windows.Forms.Padding(5, 5, 5, 5);
