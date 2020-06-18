@@ -12,15 +12,17 @@ using XrmToolBox.Extensibility;
 
 namespace ReplaceAttributeXmPlugin.Helper
 {
-    public class XmlOperation
+    public static class XmlOperationss
     {
-        public static void DeleteFormDependency(XmlRequest Request)
+        public delegate void TaskCompletedCallBack(XmlRequest request);
+
+        public static void DeleteFormDependency(XmlRequest request, TaskCompletedCallBack taskCompletedCallBack)
         {
-            List<ClsViiewItemsChecked> checkedItemsProcess = ConvertListViweItems(Request.CheckedFromItems);
-            DeleteFormDependencyRecuricive(Request, checkedItemsProcess);
+            var checkedItemsProcess = ConvertListViweItems(request.CheckedFromItems);
+            DeleteFormDependencyRecuricive(request, checkedItemsProcess, taskCompletedCallBack);
         }
        
-        private static void DeleteFormDependencyRecuricive(XmlRequest Request, List<ClsViiewItemsChecked> checkedItems)
+        private static void DeleteFormDependencyRecuricive(XmlRequest Request, List<ClsViiewItemsChecked> checkedItems, TaskCompletedCallBack taskCompletedCallBack)
         {
             if (checkedItems.Where(c => c.checkItemProcessed == false).Any())
             {
@@ -33,10 +35,17 @@ namespace ReplaceAttributeXmPlugin.Helper
                     objEnt["formxml"] = objResult.PublishXml;
                     Request.ObjPlugin.WorkAsync(new WorkAsyncInfo
                     {
-                        Message = "Deleting Dependency from  " + objListItem.checkedItem.Text + "; Attribute Name " + Request.OldAttributeName,
+                        Message = "Deleting Dependency from  " + objListItem.checkedItem.Text + " for Attribute Name " + Request.OldAttributeName,
                         Work = (bw, e) =>
                         {
-                            Request.ServiceProxy.Update(objEnt);
+                            try
+                            {
+                                Request.ServiceProxy.Update(objEnt);
+                            }
+                            catch(Exception exc)
+                            {
+                                MessageBox.Show(Request.ObjPlugin.ParentForm, exc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            }
                         },
                         PostWorkCallBack = e =>
                         {
@@ -47,15 +56,18 @@ namespace ReplaceAttributeXmPlugin.Helper
                             else
                             {
                                 objListItem.checkItemProcessed = true;
-                                DeleteFormDependencyRecuricive(Request, checkedItems);
+                                DeleteFormDependencyRecuricive(Request, checkedItems, taskCompletedCallBack);
                                 if (!checkedItems.Where(c => c.checkItemProcessed == false).Any())
                                 {
                                     if (Request.IsViewDependency)
                                     {
-                                        DeleteViewDependency(Request);
+                                        DeleteViewDependency(Request, taskCompletedCallBack);
                                     }
                                     else
+                                    {
                                         PublishEntity(Request.ObjPlugin, Request.ServiceProxy, Request.Objentity);
+                                        taskCompletedCallBack?.Invoke(Request);
+                                    }
                                 }
                             }
                         }
@@ -64,13 +76,13 @@ namespace ReplaceAttributeXmPlugin.Helper
             }
         }
 
-        public static void DeleteViewDependency(XmlRequest Request)
+        public static void DeleteViewDependency(XmlRequest Request, TaskCompletedCallBack taskCompletedCallBack)
         {
             List<ClsViiewItemsChecked> checkedItemsProcess = ConvertListViweItems(Request.CheckedItemsViews);
-            DeleteViewDependencyRecuricive(Request, checkedItemsProcess);
+            DeleteViewDependencyRecuricive(Request, checkedItemsProcess, taskCompletedCallBack);
         }
 
-        private static void DeleteViewDependencyRecuricive(XmlRequest Request, List<ClsViiewItemsChecked> checkedItems)
+        private static void DeleteViewDependencyRecuricive(XmlRequest Request, List<ClsViiewItemsChecked> checkedItems, TaskCompletedCallBack taskCompletedCallBack)
         {
             if (checkedItems.Where(c => c.checkItemProcessed == false).Any())
             {
@@ -81,16 +93,23 @@ namespace ReplaceAttributeXmPlugin.Helper
                     ((CrmServiceClient)Request.ServiceProxy).CallerId = ((EntityReference)objEnt.Attributes["ownerid"]).Id;
                 }
                 XmlResults objResult = InternalDeleteViewDependency(Request.OldAttributeName, objListItem.checkedItem);
+                objResult.oldFetchXml = (string)objEnt["fetchxml"];
                 if (objResult.LayoutXml != string.Empty)
                     objEnt["layoutxml"] = objResult.LayoutXml;
                 if (objResult.FetchXml != string.Empty)
                     objEnt["fetchxml"] = objResult.FetchXml;
                 Request.ObjPlugin.WorkAsync(new WorkAsyncInfo
                 {
-                    Message = "Deleting Dependency View  " + objListItem.checkedItem.Text + "; Attribute Name " + Request.OldAttributeName,
+                    Message = "Deleting Dependency View  " + objListItem.checkedItem.Text + " for Attribute Name " + Request.OldAttributeName,
                     Work = (bw, e) =>
                     {
-                        Request.ServiceProxy.Update(objEnt);
+                        try
+                        {
+                            Request.ServiceProxy.Update(objEnt);
+                        }catch(Exception exc)
+                        {
+                            MessageBox.Show(Request.ObjPlugin.ParentForm, exc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
                     },
                     PostWorkCallBack = e =>
                     {
@@ -101,10 +120,12 @@ namespace ReplaceAttributeXmPlugin.Helper
                         else
                         {
                             objListItem.checkItemProcessed = true;
-                            DeleteViewDependencyRecuricive(Request, checkedItems);
+                            DeleteViewDependencyRecuricive(Request, checkedItems, taskCompletedCallBack);
                             if (!checkedItems.Where(c => c.checkItemProcessed == false).Any())
                             {
-                                PublishEntity(Request.ObjPlugin, Request.ServiceProxy, Request.Objentity);
+                                if (!Request.IsUserView)
+                                    PublishEntity(Request.ObjPlugin, Request.ServiceProxy, Request.Objentity);
+                                taskCompletedCallBack?.Invoke(Request);
                             }
                         }
                     }
@@ -113,12 +134,12 @@ namespace ReplaceAttributeXmPlugin.Helper
         }
 
 
-        public static void ReplaceFormDependency(XmlRequest request)
+        public static void ReplaceFormDependency(XmlRequest request, TaskCompletedCallBack taskCompletedCallBack)
         {
             List<ClsViiewItemsChecked> checkedItemsProcess = ConvertListViweItems(request.CheckedFromItems);
-            ReplaceFormDependencyRecuricive(request, checkedItemsProcess);
+            ReplaceFormDependencyRecuricive(request, checkedItemsProcess, taskCompletedCallBack);
         }
-        private static void ReplaceFormDependencyRecuricive(XmlRequest request, List<ClsViiewItemsChecked> checkedItems)
+        private static void ReplaceFormDependencyRecuricive(XmlRequest request, List<ClsViiewItemsChecked> checkedItems, TaskCompletedCallBack taskCompletedCallBack)
         {
             if (checkedItems.Where(c => c.checkItemProcessed == false).Any())
             {
@@ -160,10 +181,17 @@ namespace ReplaceAttributeXmPlugin.Helper
                                 objEnt["formxml"] = doc.InnerXml;
                                 request.ObjPlugin.WorkAsync(new WorkAsyncInfo
                                 {
-                                    Message = "Replacing Dependency Form  " + objListItem.checkedItem.Text + "; Old Attribute Name " + request.OldAttributeName + "With New Attribute Name: " + request.ReplaceAttributeName,
+                                    Message = "Replacing Dependency Form  " + objListItem.checkedItem.Text + "\n Old Attribute Name " + request.OldAttributeName + " with New Attribute Name: " + request.ReplaceAttributeName,
                                     Work = (bw, e) =>
                                     {
-                                        request.ServiceProxy.Update(objEnt);
+                                        try
+                                        {
+                                            request.ServiceProxy.Update(objEnt);
+                                        }
+                                        catch(Exception exc)
+                                        {
+                                            MessageBox.Show(request.ObjPlugin.ParentForm, exc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                        }
                                     },
                                     PostWorkCallBack = e =>
                                     {
@@ -174,15 +202,18 @@ namespace ReplaceAttributeXmPlugin.Helper
                                         else
                                         {
                                             objListItem.checkItemProcessed = true;
-                                            ReplaceFormDependencyRecuricive(request, checkedItems);
+                                            ReplaceFormDependencyRecuricive(request, checkedItems, taskCompletedCallBack);
                                             if (!checkedItems.Where(c => c.checkItemProcessed == false).Any())
                                             {
                                                 if (request.IsViewDependency)
                                                 {
-
+                                                    ReplaceViewDependency(request, taskCompletedCallBack);
                                                 }
                                                 else
+                                                {
                                                     PublishEntity(request.ObjPlugin, request.ServiceProxy, request.Objentity);
+                                                    taskCompletedCallBack?.Invoke(request);
+                                                }
                                             }
                                         }
                                     }
@@ -198,12 +229,12 @@ namespace ReplaceAttributeXmPlugin.Helper
             }
         }
 
-        public static void ReplaceViewDependency(XmlRequest request)
+        public static void ReplaceViewDependency(XmlRequest request, TaskCompletedCallBack taskCompletedCallBack)
         {
             List<ClsViiewItemsChecked> checkedItemsProcess = ConvertListViweItems(request.CheckedItemsViews);
-            ReplaceViewDependencyRecuricive(request, checkedItemsProcess);
+            ReplaceViewDependencyRecuricive(request, checkedItemsProcess, taskCompletedCallBack);
         }
-        private static void ReplaceViewDependencyRecuricive(XmlRequest request, List<ClsViiewItemsChecked> checkedItems)
+        private static void ReplaceViewDependencyRecuricive(XmlRequest request, List<ClsViiewItemsChecked> checkedItems, TaskCompletedCallBack taskCompletedCallBack)
         {
             if (checkedItems.Where(c => c.checkItemProcessed == false).Any())
             {
@@ -222,10 +253,27 @@ namespace ReplaceAttributeXmPlugin.Helper
                         objEnt["fetchxml"] = objResult.FetchXml;
                     request.ObjPlugin.WorkAsync(new WorkAsyncInfo
                     {
-                        Message = "Replacing Dependency View  " + objListItem.checkedItem.Text + "; Old Attribute Name " + request.OldAttributeName + "With New Attribute Name: " + request.ReplaceAttributeName,
+                        Message = "Replacing Dependency View  " + objListItem.checkedItem.Text + "\n Old Attribute Name " + request.OldAttributeName + " with New Attribute Name: " + request.ReplaceAttributeName,
                         Work = (bw, e) =>
                         {
-                            request.ServiceProxy.Update(objEnt);
+                            try
+                            {
+                                request.ServiceProxy.Update(objEnt);
+                            }
+                            catch(Exception exc)
+                            {
+                                MessageBox.Show(request.ObjPlugin.ParentForm, "Error in Fetch Xml Update \n " + exc.Message + "\n Try Old Fetch Xml and New Layout Xml Update !!! \n Replacing Dependency View  " + "\n Old Attribute Name " + request.OldAttributeName + " with New Attribute Name: " + request.ReplaceAttributeName
+                                    , "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                try
+                                {
+                                    objEnt["fetchxml"] = objResult.oldFetchXml;
+                                    request.ServiceProxy.Update(objEnt);
+                                }
+                                catch {
+                                    MessageBox.Show(request.ObjPlugin.ParentForm, "Error in Old Fetch Xml Update \n " + exc.Message + "\n Replacing Dependency View  " + "\n Old Attribute Name " + request.OldAttributeName + " with New Attribute Name: " + request.ReplaceAttributeName
+                                       , "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                }
+                            }
                         },
                         PostWorkCallBack = e =>
                         {
@@ -236,10 +284,16 @@ namespace ReplaceAttributeXmPlugin.Helper
                             else
                             {
                                 objListItem.checkItemProcessed = true;
-                                ReplaceViewDependencyRecuricive(request, checkedItems);
-                                if (!checkedItems.Where(c => c.checkItemProcessed == false).Any())
+                                ReplaceViewDependencyRecuricive(request, checkedItems, taskCompletedCallBack);
+                                if (checkedItems.All(c => c.checkItemProcessed))
                                 {
-                                    PublishEntity(request.ObjPlugin, request.ServiceProxy, request.Objentity);
+                                    if (!request.IsUserView)
+                                    {
+                                        PublishEntity(request.ObjPlugin, request.ServiceProxy, request.Objentity);
+                                        taskCompletedCallBack?.Invoke(request);
+                                    }
+                                    else
+                                        taskCompletedCallBack?.Invoke(request);
                                 }
                             }
                         }
@@ -249,16 +303,13 @@ namespace ReplaceAttributeXmPlugin.Helper
         }
         
 
-        public static bool FindXMLControl(string formXml, string attributeName, string elementTagName, string searchElementProperty)
+        public static bool FindXmlControl(string formXml, string attributeName, string elementTagName, string searchElementProperty)
         {
-            XmlDocument doc = new XmlDocument();
+            var doc = new XmlDocument();
             doc.LoadXml(formXml);
             var allControls = doc.GetElementsByTagName(elementTagName);
-            var control = allControls.Cast<XmlNode>().Where(p => p.Attributes[searchElementProperty].InnerText == attributeName);
-            if (control != null && control.Count() > 0)
-                return true;
-            else
-                return false;
+            var control = allControls.Cast<XmlNode>().Where(p => p.Attributes != null && p.Attributes[searchElementProperty].InnerText == attributeName);
+            return control.Any();
         }
 
         private static XmlResults InternalReplaceViewDependency(string oldAttributeName, string replaceAttributeName, ListViewItem Item)

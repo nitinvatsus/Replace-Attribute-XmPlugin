@@ -142,6 +142,7 @@
     <Compile Include="Helper\ClsViiewItemsChecked.cs" />
     <Compile Include="Helper\CRMAction.cs" />
     <Compile Include="Helper\ListViewItemComparer.cs" />
+    <Compile Include="Helper\UserViewRequest.cs" />
     <Compile Include="Helper\XmlOperation.cs" />
     <Compile Include="Helper\XmlOperationResult.cs" />
     <Compile Include="Helper\XmlRequest.cs" />
@@ -187,6 +188,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\dependencies1.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\uncheck-all.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\check-all.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\uncheck-all1.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

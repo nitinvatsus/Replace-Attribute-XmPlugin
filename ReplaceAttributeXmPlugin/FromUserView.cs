@@ -1,10 +1,13 @@
 ﻿using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Client;
+using Microsoft.Xrm.Sdk.Metadata;
+using Microsoft.Xrm.Tooling.Connector;
 using ReplaceAttributeXmPlugin.Helper;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics.SymbolStore;
 using System.Linq;
 using System.Windows.Forms;
 using XrmToolBox.Extensibility;
@@ -13,8 +16,9 @@ namespace ReplaceAttributeXmPlugin
 {
     public partial class FromUserView : Form
     {
-        readonly OrganizationServiceProxy _serviceProxy;
+        readonly IOrganizationService _serviceProxy;
         private readonly PluginControlBase ObjPlugin;
+        private readonly EntityMetadata _objEntityMetadata;
         private List<ListViewItem> _UsersListViewItemsColl = null;
         private List<ListViewItem> _CheckedUsersListViewItemsColl = null;
         private readonly int? objectTypeCode;
@@ -24,20 +28,26 @@ namespace ReplaceAttributeXmPlugin
         private readonly string _oldAttribuetName = string.Empty;
         private readonly string _NewAttribuetName = string.Empty;
 
-        public FromUserView(string AttributeSelected, string newAttributeName, int? objectType, OrganizationServiceProxy serviceProxy, PluginControlBase Plugin)
+        public FromUserView(UserViewRequest Request)
         {
             InitializeComponent();
-            _oldAttribuetName = AttributeSelected;
-            _NewAttribuetName = newAttributeName;
-            _serviceProxy = serviceProxy;
-            objectTypeCode = objectType;
-            ObjPlugin = Plugin;
+            _oldAttribuetName = Request.AttributeSelected;
+            _NewAttribuetName = Request.newAttributeName;
+            Text = "Delete Attribute Name: " + Request.oldAttributeDisplayName;
+            if (_NewAttribuetName != null && _NewAttribuetName != string.Empty)
+            {
+                Text = "Replace Attribute " + Request.oldAttributeDisplayName + " with " + Request.newAttributeDisplayName;
+            }
+            _serviceProxy = Request.serviceProxy;
+            if (Request.objEntity != null)
+            {
+                objectTypeCode = Request.objEntity.ObjectTypeCode;
+                _objEntityMetadata = Request.objEntity;
+            }
+            ObjPlugin = Request.Plugin;
         }
 
-        private void toolStripMenu_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
-        {
-
-        }
+        
 
         private void FromUserView_Load(object sender, EventArgs e)
         {
@@ -95,19 +105,19 @@ namespace ReplaceAttributeXmPlugin
             objListView.ResumeLayout();
         }
 
-        private void listViewSystemUsers_ColumnClick(object sender, ColumnClickEventArgs e)
+        private void ListViewSystemUsers_ColumnClick(object sender, ColumnClickEventArgs e)
         {
             listViewSystemUsers.Sorting = ((listViewSystemUsers.Sorting == SortOrder.Ascending) ? SortOrder.Descending : SortOrder.Ascending);
             listViewSystemUsers.ListViewItemSorter = new ListViewItemComparer(e.Column, listViewSystemUsers.Sorting);
         }
 
-        private void listViewView_ColumnClick(object sender, ColumnClickEventArgs e)
+        private void ListViewView_ColumnClick(object sender, ColumnClickEventArgs e)
         {
             listViewView.Sorting = ((listViewView.Sorting == SortOrder.Ascending) ? SortOrder.Descending : SortOrder.Ascending);
             listViewView.ListViewItemSorter = new ListViewItemComparer(e.Column, listViewView.Sorting);
         }
 
-        private void cmdCheckAllUsers_Click(object sender, EventArgs e)
+        private void CmdCheckAllUsers_Click(object sender, EventArgs e)
         {
             if (cmdCheckAllUsers.Text == "Check All")
             {
@@ -115,6 +125,7 @@ namespace ReplaceAttributeXmPlugin
                 {
                     item.Checked = true;
                 }
+                tbLoadUserView.Enabled = true;
                 cmdCheckAllUsers.Text = "Uncheck All";
             }
             else
@@ -123,6 +134,7 @@ namespace ReplaceAttributeXmPlugin
                 {
                     item.Checked = false;
                 }
+                tbLoadUserView.Enabled = false;
                 cmdCheckAllUsers.Text = "Check All";
             }
         }
@@ -149,18 +161,12 @@ namespace ReplaceAttributeXmPlugin
 
         private void TxtSearchUsersList_TextChanged(object sender, EventArgs e)
         {
-            var searchList = _ViewListViewItemsColl.Where(l => l.SubItems[0].Text.ToUpper().Contains(TxtSearchUsersList.Text.ToUpper()));
+            var searchList = _UsersListViewItemsColl.Where(l => l.SubItems[0].Text.ToUpper().Contains(TxtSearchUsersList.Text.ToUpper()));
             listViewSystemUsers.Items.Clear();
             listViewSystemUsers.Items.AddRange(searchList.ToArray());
         }
 
-        private void toolStripButton2_Click(object sender, EventArgs e)
-        {
-            _CheckedUsersListViewItemsColl = new List<ListViewItem>();
-            _CheckedUsersListViewItemsColl.AddRange(listViewSystemUsers.CheckedItems.Cast<ListViewItem>().ToArray());
-            List<ClsViiewItemsChecked> checkedItemsProcess = ConvertListViweItems(listViewSystemUsers.CheckedItems.Cast<ListViewItem>().ToList());
-            LoadUserView(checkedItemsProcess);
-        }
+       
 
         private void LoadUserView(List<ClsViiewItemsChecked> checkedItems)
         {
@@ -168,14 +174,14 @@ namespace ReplaceAttributeXmPlugin
             {
                 ClsViiewItemsChecked objListItem = checkedItems.Where(c => c.checkItemProcessed == false).FirstOrDefault();
                 Entity systemUser = (Entity)objListItem.checkedItem.Tag;
-                _serviceProxy.CallerId = systemUser.Id;
+                ((CrmServiceClient)_serviceProxy).CallerId = systemUser.Id;
                 int itemProcssed = checkedItems.Where(c => c.checkItemProcessed).Count();
-                int TotalItems = checkedItems.Where(c => c.checkItemProcessed).Count();
+                int TotalItems = checkedItems.Count();
                 int ItemsRemain = TotalItems - itemProcssed;
 
                 ObjPlugin.WorkAsync(new WorkAsyncInfo
                 {
-                    Message = string.Format("Fetching User View  for {0};/n Total Users: {1}, Process:{2} Remaining:{3} ", objListItem.checkedItem.Text, TotalItems, itemProcssed, ItemsRemain),
+                    Message = string.Format("Fetching User View  for {0}\n Total Users: {1}, Process:{2} Remaining:{3} ", objListItem.checkedItem.Text, TotalItems, itemProcssed, ItemsRemain),
                     Work = (bw, e) =>
                     {
                         e.Result = CRMAction.GetAllUserViews(_serviceProxy, objectTypeCode, _oldAttribuetName);
@@ -188,6 +194,8 @@ namespace ReplaceAttributeXmPlugin
                         }
                         else
                         {
+                            if (e.Result != null)
+                                AddUserViews((IEnumerable<Entity>)e.Result, systemUser);
                             objListItem.checkItemProcessed = true;
                             LoadUserView(checkedItems);
                             if (!checkedItems.Where(c => c.checkItemProcessed == false).Any())
@@ -195,6 +203,7 @@ namespace ReplaceAttributeXmPlugin
                                 listViewView.Groups.AddRange(_ViewListViewGroup.ToArray<ListViewGroup>());
                                 listViewView.Items.AddRange(_ViewListViewItemsColl.ToArray<ListViewItem>());
                                 SortList(listViewView);
+                                Opacity = 1;
                             }
                         }
                     }
@@ -203,18 +212,19 @@ namespace ReplaceAttributeXmPlugin
             }
         }
 
-        public void AddUserViews(IEnumerable<Entity> userViews, string userFullName, Entity systemUser)
+        public void AddUserViews(IEnumerable<Entity> userViews,  Entity systemUser)
         {
+            string userFullName = systemUser.Attributes.Contains("fullname") ? (string)systemUser["fullname"] : "";
             foreach (var objViewEntity in userViews)
             {
                 string layoutXml = (string)objViewEntity["layoutxml"];
-                bool IsFound = XmlOperation.FindXMLControl(layoutXml, _oldAttribuetName, "cell", "name");
+                bool IsFound = XmlOperation.FindXmlControl(layoutXml, _oldAttribuetName, "cell", "name");
                 if (!IsFound)
                 {
                     layoutXml = (string)objViewEntity["fetchxml"];
-                    IsFound = XmlOperation.FindXMLControl(layoutXml, _oldAttribuetName, "attribute", "name");
+                    IsFound = XmlOperation.FindXmlControl(layoutXml, _oldAttribuetName, "attribute", "name");
                     if (!IsFound)
-                        IsFound = XmlOperation.FindXMLControl(layoutXml, _oldAttribuetName, "condition", "attribute");
+                        IsFound = XmlOperation.FindXmlControl(layoutXml, _oldAttribuetName, "condition", "attribute");
                 }
                 if (IsFound)
                 {
@@ -267,8 +277,9 @@ namespace ReplaceAttributeXmPlugin
             return checkedItemsProcess;
         }
 
-        private void tbDeleteSelectedDependency_Click(object sender, EventArgs e)
+        private void TbDeleteSelectedDependency_Click(object sender, EventArgs e)
         {
+            Opacity = 0;
             XmlRequest objRequest = new XmlRequest()
             {
                 IsUserView = true,
@@ -279,17 +290,28 @@ namespace ReplaceAttributeXmPlugin
                 IsViewDependency = false,
                 CheckedFromItems = null,
                 CheckedItemsViews = null,
-                ObjAttDataReplace = null
+                ObjAttDataReplace = null,
+                Objentity = _objEntityMetadata,
             };
             if (listViewView.CheckedItems.Count > 0)
             {
                 objRequest.CheckedItemsViews = listViewView.CheckedItems.Cast<ListViewItem>().ToList();
-                XmlOperation.DeleteViewDependency(objRequest);
+                XmlOperation.TaskCompletedCallBack callback = CallBackAfterDelete;
+                XmlOperation.DeleteViewDependency(objRequest, callback);
             }
         }
 
-        private void tbReplaceSelectedDependency_Click(object sender, EventArgs e)
+        private void CallBackAfterDelete(XmlRequest Request)
         {
+            LoadUsersViews();
+        }
+        private void CallBackAfterReplace(XmlRequest Request)
+        {
+            LoadUsersViews();
+        }
+        private void TbReplaceSelectedDependency_Click(object sender, EventArgs e)
+        {
+            Opacity = 0;
             XmlRequest objRequest = new XmlRequest()
             {
                 IsUserView = true,
@@ -300,13 +322,78 @@ namespace ReplaceAttributeXmPlugin
                 IsViewDependency = false,
                 CheckedFromItems = null,
                 CheckedItemsViews = null,
-                ObjAttDataReplace = null
+                ObjAttDataReplace = null,
+                Objentity = _objEntityMetadata
             };
             if (listViewView.CheckedItems.Count > 0)
             {
                 objRequest.CheckedItemsViews = listViewView.CheckedItems.Cast<ListViewItem>().ToList();
-                XmlOperation.ReplaceViewDependency(objRequest);
+                XmlOperation.TaskCompletedCallBack callback = CallBackAfterReplace;
+                XmlOperation.ReplaceViewDependency(objRequest, callback);
             }
+        }
+
+        private void TbLoadUserView_Click(object sender, EventArgs e)
+        {
+            LoadUsersViews();
+        }
+
+        private void LoadUsersViews()
+        {
+            _CheckedUsersListViewItemsColl = new List<ListViewItem>();
+            _CheckedUsersListViewItemsColl.AddRange(listViewSystemUsers.CheckedItems.Cast<ListViewItem>().ToArray());
+            CmdCheckAllViews.Text = "Check All";
+            _ViewListViewGroup = new List<ListViewGroup>();
+            _ViewListViewItemsColl = new List<ListViewItem>();
+            listViewView.Items.Clear();
+
+            StartPosition = FormStartPosition.CenterParent;
+            Opacity = 0;
+
+            List<ClsViiewItemsChecked> checkedItemsProcess = ConvertListViweItems(listViewSystemUsers.CheckedItems.Cast<ListViewItem>().ToList());
+            LoadUserView(checkedItemsProcess);
+        }
+
+        private void TsbClose_Click(object sender, EventArgs e)
+        {
+           Close();
+        }
+
+        private void ListViewSystemUsers_ItemChecked(object sender, ItemCheckedEventArgs e)
+        {
+            if(listViewSystemUsers.CheckedItems.Count > 0)
+            {
+                tbLoadUserView.Enabled = true;
+            }
+            else
+            {
+                tbLoadUserView.Enabled = false;
+            }
+        }
+
+        private void ListViewSystemUsers_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void ListViewView_ItemChecked(object sender, ItemCheckedEventArgs e)
+        {
+            if (listViewSystemUsers.CheckedItems.Count > 0)
+            {
+                tbDeleteSelectedDependency.Enabled = true;
+                if (_NewAttribuetName != null && _NewAttribuetName != string.Empty)
+                    tbReplaceSelectedDependency.Enabled = true;
+            }
+            else
+            {
+                tbDeleteSelectedDependency.Enabled = false;
+                tbReplaceSelectedDependency.Enabled = false;
+            }
+        }
+
+        private void toolStripMenu_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+
         }
     }
 }

@@ -29,17 +29,27 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ReplaceAttributeControl));
-            System.Windows.Forms.ListViewGroup listViewGroup5 = new System.Windows.Forms.ListViewGroup("Custom", System.Windows.Forms.HorizontalAlignment.Left);
-            System.Windows.Forms.ListViewGroup listViewGroup6 = new System.Windows.Forms.ListViewGroup("System", System.Windows.Forms.HorizontalAlignment.Left);
-            System.Windows.Forms.ListViewGroup listViewGroup7 = new System.Windows.Forms.ListViewGroup("Custom", System.Windows.Forms.HorizontalAlignment.Left);
-            System.Windows.Forms.ListViewGroup listViewGroup8 = new System.Windows.Forms.ListViewGroup("System", System.Windows.Forms.HorizontalAlignment.Left);
+            System.Windows.Forms.ListViewGroup listViewGroup9 = new System.Windows.Forms.ListViewGroup("Custom", System.Windows.Forms.HorizontalAlignment.Left);
+            System.Windows.Forms.ListViewGroup listViewGroup10 = new System.Windows.Forms.ListViewGroup("System", System.Windows.Forms.HorizontalAlignment.Left);
+            System.Windows.Forms.ListViewGroup listViewGroup11 = new System.Windows.Forms.ListViewGroup("Custom", System.Windows.Forms.HorizontalAlignment.Left);
+            System.Windows.Forms.ListViewGroup listViewGroup12 = new System.Windows.Forms.ListViewGroup("System", System.Windows.Forms.HorizontalAlignment.Left);
             this.toolStripMenu = new System.Windows.Forms.ToolStrip();
             this.tsbClose = new System.Windows.Forms.ToolStripButton();
             this.tssSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.tbLoadDependency = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+            this.tbLoadUsersView = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.tbDeleteSelectedDependency = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this.tbReplaceSelectedDependency = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
+            this.tbCheckAllSystemForms = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
+            this.TbCheckAllSystemViews = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.TxtSearchEnityList = new System.Windows.Forms.TextBox();
             this.listViewEntities = new System.Windows.Forms.ListView();
@@ -60,8 +70,6 @@
             this.AttributeName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.StateAttribute = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.CmdCheckAllForms = new System.Windows.Forms.Button();
-            this.CmdCheckAllViews = new System.Windows.Forms.Button();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.listViewView = new System.Windows.Forms.ListView();
             this.ViewName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -70,7 +78,6 @@
             this.listViewForms = new System.Windows.Forms.ListView();
             this.FormName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.State = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.toolStripButton2 = new System.Windows.Forms.ToolStripButton();
             this.toolStripMenu.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -87,13 +94,22 @@
             this.tsbClose,
             this.tssSeparator1,
             this.toolStripButton1,
+            this.toolStripSeparator1,
             this.tbLoadDependency,
+            this.toolStripSeparator2,
+            this.tbLoadUsersView,
+            this.toolStripSeparator3,
             this.tbDeleteSelectedDependency,
+            this.toolStripSeparator4,
             this.tbReplaceSelectedDependency,
-            this.toolStripButton2});
+            this.toolStripSeparator5,
+            this.tbCheckAllSystemForms,
+            this.toolStripSeparator6,
+            this.TbCheckAllSystemViews,
+            this.toolStripSeparator7});
             this.toolStripMenu.Location = new System.Drawing.Point(0, 0);
             this.toolStripMenu.Name = "toolStripMenu";
-            this.toolStripMenu.Size = new System.Drawing.Size(1799, 31);
+            this.toolStripMenu.Size = new System.Drawing.Size(1878, 31);
             this.toolStripMenu.TabIndex = 4;
             this.toolStripMenu.Text = "toolStrip1";
             // 
@@ -103,7 +119,7 @@
             this.tsbClose.Name = "tsbClose";
             this.tsbClose.Size = new System.Drawing.Size(110, 28);
             this.tsbClose.Text = "Close this tool";
-            this.tsbClose.Click += new System.EventHandler(this.tsbClose_Click);
+            this.tsbClose.Click += new System.EventHandler(this.TsbClose_Click);
             // 
             // tssSeparator1
             // 
@@ -119,6 +135,11 @@
             this.toolStripButton1.Text = "Load Entities";
             this.toolStripButton1.Click += new System.EventHandler(this.ToolStripButton1_Click);
             // 
+            // toolStripSeparator1
+            // 
+            this.toolStripSeparator1.Name = "toolStripSeparator1";
+            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 31);
+            // 
             // tbLoadDependency
             // 
             this.tbLoadDependency.Enabled = false;
@@ -128,6 +149,26 @@
             this.tbLoadDependency.Size = new System.Drawing.Size(130, 28);
             this.tbLoadDependency.Text = "Load Dependency";
             this.tbLoadDependency.Click += new System.EventHandler(this.TbLoadDependency_Click);
+            // 
+            // toolStripSeparator2
+            // 
+            this.toolStripSeparator2.Name = "toolStripSeparator2";
+            this.toolStripSeparator2.Size = new System.Drawing.Size(6, 31);
+            // 
+            // tbLoadUsersView
+            // 
+            this.tbLoadUsersView.Enabled = false;
+            this.tbLoadUsersView.Image = global::ReplaceAttributeXmPlugin.Properties.Resources.cv_IconWeekListTeam32;
+            this.tbLoadUsersView.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tbLoadUsersView.Name = "tbLoadUsersView";
+            this.tbLoadUsersView.Size = new System.Drawing.Size(115, 28);
+            this.tbLoadUsersView.Text = "Load User View";
+            this.tbLoadUsersView.Click += new System.EventHandler(this.TbLoadUsersView_Click);
+            // 
+            // toolStripSeparator3
+            // 
+            this.toolStripSeparator3.Name = "toolStripSeparator3";
+            this.toolStripSeparator3.Size = new System.Drawing.Size(6, 31);
             // 
             // tbDeleteSelectedDependency
             // 
@@ -139,6 +180,11 @@
             this.tbDeleteSelectedDependency.Text = "Delete Selected Dependency";
             this.tbDeleteSelectedDependency.Click += new System.EventHandler(this.TbDeleteSelectedDependency_Click);
             // 
+            // toolStripSeparator4
+            // 
+            this.toolStripSeparator4.Name = "toolStripSeparator4";
+            this.toolStripSeparator4.Size = new System.Drawing.Size(6, 31);
+            // 
             // tbReplaceSelectedDependency
             // 
             this.tbReplaceSelectedDependency.Enabled = false;
@@ -149,22 +195,58 @@
             this.tbReplaceSelectedDependency.Text = "Replace Selected Dependency";
             this.tbReplaceSelectedDependency.Click += new System.EventHandler(this.TbReplaceSelectedDependency_Click);
             // 
+            // toolStripSeparator5
+            // 
+            this.toolStripSeparator5.Name = "toolStripSeparator5";
+            this.toolStripSeparator5.Size = new System.Drawing.Size(6, 31);
+            // 
+            // tbCheckAllSystemForms
+            // 
+            this.tbCheckAllSystemForms.Enabled = false;
+            this.tbCheckAllSystemForms.Image = global::ReplaceAttributeXmPlugin.Properties.Resources.uncheck_all;
+            this.tbCheckAllSystemForms.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tbCheckAllSystemForms.Name = "tbCheckAllSystemForms";
+            this.tbCheckAllSystemForms.Size = new System.Drawing.Size(162, 28);
+            this.tbCheckAllSystemForms.Text = "Check All System Forms";
+            this.tbCheckAllSystemForms.Click += new System.EventHandler(this.TbCheckAllSystemForms_Click);
+            // 
+            // toolStripSeparator6
+            // 
+            this.toolStripSeparator6.Name = "toolStripSeparator6";
+            this.toolStripSeparator6.Size = new System.Drawing.Size(6, 31);
+            // 
+            // TbCheckAllSystemViews
+            // 
+            this.TbCheckAllSystemViews.Enabled = false;
+            this.TbCheckAllSystemViews.Image = global::ReplaceAttributeXmPlugin.Properties.Resources.uncheck_all;
+            this.TbCheckAllSystemViews.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.TbCheckAllSystemViews.Name = "TbCheckAllSystemViews";
+            this.TbCheckAllSystemViews.Size = new System.Drawing.Size(154, 28);
+            this.TbCheckAllSystemViews.Text = "Check All System View";
+            this.TbCheckAllSystemViews.Click += new System.EventHandler(this.TbCheckAllSystemViews_Click);
+            // 
+            // toolStripSeparator7
+            // 
+            this.toolStripSeparator7.Name = "toolStripSeparator7";
+            this.toolStripSeparator7.Size = new System.Drawing.Size(6, 31);
+            // 
             // groupBox2
             // 
             this.groupBox2.Controls.Add(this.TxtSearchEnityList);
             this.groupBox2.Controls.Add(this.listViewEntities);
-            this.groupBox2.Location = new System.Drawing.Point(3, 36);
+            this.groupBox2.Dock = System.Windows.Forms.DockStyle.Left;
+            this.groupBox2.Location = new System.Drawing.Point(0, 31);
             this.groupBox2.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox2.Size = new System.Drawing.Size(427, 753);
+            this.groupBox2.Size = new System.Drawing.Size(429, 766);
             this.groupBox2.TabIndex = 20;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Search Entities";
             // 
             // TxtSearchEnityList
             // 
-            this.TxtSearchEnityList.Location = new System.Drawing.Point(11, 19);
+            this.TxtSearchEnityList.Location = new System.Drawing.Point(12, 26);
             this.TxtSearchEnityList.Margin = new System.Windows.Forms.Padding(5);
             this.TxtSearchEnityList.Name = "TxtSearchEnityList";
             this.TxtSearchEnityList.Size = new System.Drawing.Size(408, 23);
@@ -173,22 +255,25 @@
             // 
             // listViewEntities
             // 
+            this.listViewEntities.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.listViewEntities.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.colDisplayName,
             this.colName,
             this.colState});
             this.listViewEntities.FullRowSelect = true;
-            listViewGroup5.Header = "Custom";
-            listViewGroup5.Name = "Custom";
-            listViewGroup5.Tag = "Custom";
-            listViewGroup6.Header = "System";
-            listViewGroup6.Name = "System";
-            listViewGroup6.Tag = "System";
+            listViewGroup9.Header = "Custom";
+            listViewGroup9.Name = "Custom";
+            listViewGroup9.Tag = "Custom";
+            listViewGroup10.Header = "System";
+            listViewGroup10.Name = "System";
+            listViewGroup10.Tag = "System";
             this.listViewEntities.Groups.AddRange(new System.Windows.Forms.ListViewGroup[] {
-            listViewGroup5,
-            listViewGroup6});
+            listViewGroup9,
+            listViewGroup10});
             this.listViewEntities.HideSelection = false;
-            this.listViewEntities.Location = new System.Drawing.Point(11, 44);
+            this.listViewEntities.Location = new System.Drawing.Point(13, 51);
             this.listViewEntities.Margin = new System.Windows.Forms.Padding(4);
             this.listViewEntities.MultiSelect = false;
             this.listViewEntities.Name = "listViewEntities";
@@ -222,18 +307,19 @@
             // 
             this.groupBox3.Controls.Add(this.TxtSearchAttributeList);
             this.groupBox3.Controls.Add(this.listViewAttributes);
-            this.groupBox3.Location = new System.Drawing.Point(437, 36);
+            this.groupBox3.Dock = System.Windows.Forms.DockStyle.Left;
+            this.groupBox3.Location = new System.Drawing.Point(429, 31);
             this.groupBox3.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox3.Size = new System.Drawing.Size(427, 753);
+            this.groupBox3.Size = new System.Drawing.Size(427, 766);
             this.groupBox3.TabIndex = 21;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Search Attributes";
             // 
             // TxtSearchAttributeList
             // 
-            this.TxtSearchAttributeList.Location = new System.Drawing.Point(9, 19);
+            this.TxtSearchAttributeList.Location = new System.Drawing.Point(9, 26);
             this.TxtSearchAttributeList.Margin = new System.Windows.Forms.Padding(5);
             this.TxtSearchAttributeList.Name = "TxtSearchAttributeList";
             this.TxtSearchAttributeList.Size = new System.Drawing.Size(408, 23);
@@ -242,23 +328,26 @@
             // 
             // listViewAttributes
             // 
+            this.listViewAttributes.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.listViewAttributes.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader1,
             this.columnHeader2,
             this.columnHeader3,
             this.columnHeader4});
             this.listViewAttributes.FullRowSelect = true;
-            listViewGroup7.Header = "Custom";
-            listViewGroup7.Name = "Custom";
-            listViewGroup7.Tag = "Custom";
-            listViewGroup8.Header = "System";
-            listViewGroup8.Name = "System";
-            listViewGroup8.Tag = "System";
+            listViewGroup11.Header = "Custom";
+            listViewGroup11.Name = "Custom";
+            listViewGroup11.Tag = "Custom";
+            listViewGroup12.Header = "System";
+            listViewGroup12.Name = "System";
+            listViewGroup12.Tag = "System";
             this.listViewAttributes.Groups.AddRange(new System.Windows.Forms.ListViewGroup[] {
-            listViewGroup7,
-            listViewGroup8});
+            listViewGroup11,
+            listViewGroup12});
             this.listViewAttributes.HideSelection = false;
-            this.listViewAttributes.Location = new System.Drawing.Point(9, 44);
+            this.listViewAttributes.Location = new System.Drawing.Point(9, 51);
             this.listViewAttributes.Margin = new System.Windows.Forms.Padding(4);
             this.listViewAttributes.MultiSelect = false;
             this.listViewAttributes.Name = "listViewAttributes";
@@ -299,18 +388,19 @@
             // 
             this.groupBox6.Controls.Add(this.TxtSearchReplaceAttributeList);
             this.groupBox6.Controls.Add(this.listViewAttributesReplaced);
-            this.groupBox6.Location = new System.Drawing.Point(871, 36);
+            this.groupBox6.Dock = System.Windows.Forms.DockStyle.Left;
+            this.groupBox6.Location = new System.Drawing.Point(856, 31);
             this.groupBox6.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox6.Name = "groupBox6";
             this.groupBox6.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox6.Size = new System.Drawing.Size(427, 753);
+            this.groupBox6.Size = new System.Drawing.Size(427, 766);
             this.groupBox6.TabIndex = 22;
             this.groupBox6.TabStop = false;
             this.groupBox6.Text = "Search Replace Attribuite";
             // 
             // TxtSearchReplaceAttributeList
             // 
-            this.TxtSearchReplaceAttributeList.Location = new System.Drawing.Point(5, 19);
+            this.TxtSearchReplaceAttributeList.Location = new System.Drawing.Point(5, 26);
             this.TxtSearchReplaceAttributeList.Margin = new System.Windows.Forms.Padding(5);
             this.TxtSearchReplaceAttributeList.Name = "TxtSearchReplaceAttributeList";
             this.TxtSearchReplaceAttributeList.Size = new System.Drawing.Size(408, 23);
@@ -319,13 +409,16 @@
             // 
             // listViewAttributesReplaced
             // 
+            this.listViewAttributesReplaced.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.listViewAttributesReplaced.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.AttrDisplayName,
             this.AttributeName,
             this.StateAttribute});
             this.listViewAttributesReplaced.FullRowSelect = true;
             this.listViewAttributesReplaced.HideSelection = false;
-            this.listViewAttributesReplaced.Location = new System.Drawing.Point(5, 44);
+            this.listViewAttributesReplaced.Location = new System.Drawing.Point(5, 51);
             this.listViewAttributesReplaced.Margin = new System.Windows.Forms.Padding(4);
             this.listViewAttributesReplaced.MultiSelect = false;
             this.listViewAttributesReplaced.Name = "listViewAttributesReplaced";
@@ -358,53 +451,28 @@
             // 
             // groupBox1
             // 
-            this.groupBox1.Controls.Add(this.CmdCheckAllForms);
-            this.groupBox1.Controls.Add(this.CmdCheckAllViews);
             this.groupBox1.Controls.Add(this.groupBox5);
             this.groupBox1.Controls.Add(this.groupBox4);
-            this.groupBox1.Location = new System.Drawing.Point(1305, 36);
+            this.groupBox1.Dock = System.Windows.Forms.DockStyle.Left;
+            this.groupBox1.Location = new System.Drawing.Point(1283, 31);
             this.groupBox1.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox1.Size = new System.Drawing.Size(485, 751);
+            this.groupBox1.Size = new System.Drawing.Size(591, 766);
             this.groupBox1.TabIndex = 23;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Dependency";
-            // 
-            // CmdCheckAllForms
-            // 
-            this.CmdCheckAllForms.BackColor = System.Drawing.SystemColors.Menu;
-            this.CmdCheckAllForms.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.CmdCheckAllForms.Location = new System.Drawing.Point(382, 30);
-            this.CmdCheckAllForms.Margin = new System.Windows.Forms.Padding(4);
-            this.CmdCheckAllForms.Name = "CmdCheckAllForms";
-            this.CmdCheckAllForms.Size = new System.Drawing.Size(95, 26);
-            this.CmdCheckAllForms.TabIndex = 21;
-            this.CmdCheckAllForms.Text = "Check All";
-            this.CmdCheckAllForms.UseVisualStyleBackColor = false;
-            this.CmdCheckAllForms.Click += new System.EventHandler(this.CmdCheckAllForms_Click);
-            // 
-            // CmdCheckAllViews
-            // 
-            this.CmdCheckAllViews.BackColor = System.Drawing.SystemColors.Menu;
-            this.CmdCheckAllViews.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.CmdCheckAllViews.Location = new System.Drawing.Point(381, 391);
-            this.CmdCheckAllViews.Margin = new System.Windows.Forms.Padding(4);
-            this.CmdCheckAllViews.Name = "CmdCheckAllViews";
-            this.CmdCheckAllViews.Size = new System.Drawing.Size(95, 26);
-            this.CmdCheckAllViews.TabIndex = 22;
-            this.CmdCheckAllViews.Text = "Check All";
-            this.CmdCheckAllViews.UseVisualStyleBackColor = false;
-            this.CmdCheckAllViews.Click += new System.EventHandler(this.CmdCheckAllViews_Click);
+            this.groupBox1.Enter += new System.EventHandler(this.groupBox1_Enter);
             // 
             // groupBox5
             // 
             this.groupBox5.Controls.Add(this.listViewView);
-            this.groupBox5.Location = new System.Drawing.Point(8, 414);
+            this.groupBox5.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.groupBox5.Location = new System.Drawing.Point(4, 376);
             this.groupBox5.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox5.Name = "groupBox5";
             this.groupBox5.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox5.Size = new System.Drawing.Size(469, 328);
+            this.groupBox5.Size = new System.Drawing.Size(583, 386);
             this.groupBox5.TabIndex = 20;
             this.groupBox5.TabStop = false;
             this.groupBox5.Text = "Found in System View";
@@ -415,19 +483,21 @@
             this.listViewView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.ViewName,
             this.ViewState});
+            this.listViewView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.listViewView.FullRowSelect = true;
             this.listViewView.HideSelection = false;
-            this.listViewView.Location = new System.Drawing.Point(8, 21);
+            this.listViewView.Location = new System.Drawing.Point(4, 20);
             this.listViewView.Margin = new System.Windows.Forms.Padding(4);
             this.listViewView.MultiSelect = false;
             this.listViewView.Name = "listViewView";
-            this.listViewView.Size = new System.Drawing.Size(453, 299);
+            this.listViewView.Size = new System.Drawing.Size(575, 362);
             this.listViewView.Sorting = System.Windows.Forms.SortOrder.Descending;
             this.listViewView.TabIndex = 10;
             this.listViewView.Tag = "0";
             this.listViewView.UseCompatibleStateImageBehavior = false;
             this.listViewView.View = System.Windows.Forms.View.Details;
             this.listViewView.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.ListViewView_ItemChecked);
+            this.listViewView.SelectedIndexChanged += new System.EventHandler(this.listViewView_SelectedIndexChanged);
             // 
             // ViewName
             // 
@@ -444,11 +514,12 @@
             // groupBox4
             // 
             this.groupBox4.Controls.Add(this.listViewForms);
-            this.groupBox4.Location = new System.Drawing.Point(8, 52);
+            this.groupBox4.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBox4.Location = new System.Drawing.Point(4, 20);
             this.groupBox4.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox4.Size = new System.Drawing.Size(469, 328);
+            this.groupBox4.Size = new System.Drawing.Size(583, 348);
             this.groupBox4.TabIndex = 20;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Found in System Forms";
@@ -459,14 +530,15 @@
             this.listViewForms.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.FormName,
             this.State});
+            this.listViewForms.Dock = System.Windows.Forms.DockStyle.Fill;
             this.listViewForms.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.listViewForms.FullRowSelect = true;
             this.listViewForms.HideSelection = false;
-            this.listViewForms.Location = new System.Drawing.Point(8, 21);
+            this.listViewForms.Location = new System.Drawing.Point(4, 20);
             this.listViewForms.Margin = new System.Windows.Forms.Padding(4);
             this.listViewForms.MultiSelect = false;
             this.listViewForms.Name = "listViewForms";
-            this.listViewForms.Size = new System.Drawing.Size(453, 299);
+            this.listViewForms.Size = new System.Drawing.Size(575, 324);
             this.listViewForms.Sorting = System.Windows.Forms.SortOrder.Descending;
             this.listViewForms.TabIndex = 8;
             this.listViewForms.Tag = "0";
@@ -486,15 +558,6 @@
             this.State.Text = "State";
             this.State.Width = 100;
             // 
-            // toolStripButton2
-            // 
-            this.toolStripButton2.Image = global::ReplaceAttributeXmPlugin.Properties.Resources.cv_IconWeekListTeam32;
-            this.toolStripButton2.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolStripButton2.Name = "toolStripButton2";
-            this.toolStripButton2.Size = new System.Drawing.Size(115, 28);
-            this.toolStripButton2.Text = "Load User View";
-            this.toolStripButton2.Click += new System.EventHandler(this.toolStripButton2_Click);
-            // 
             // ReplaceAttributeControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -507,8 +570,9 @@
             this.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "ReplaceAttributeControl";
-            this.Size = new System.Drawing.Size(1799, 797);
+            this.Size = new System.Drawing.Size(1878, 797);
             this.Load += new System.EventHandler(this.MyPluginControl_Load);
+            this.Resize += new System.EventHandler(this.ReplaceAttributeControl_Resize);
             this.toolStripMenu.ResumeLayout(false);
             this.toolStripMenu.PerformLayout();
             this.groupBox2.ResumeLayout(false);
@@ -550,12 +614,10 @@
         private System.Windows.Forms.ColumnHeader StateAttribute;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.GroupBox groupBox5;
-        private System.Windows.Forms.Button CmdCheckAllViews;
         private System.Windows.Forms.ListView listViewView;
         private System.Windows.Forms.ColumnHeader ViewName;
         private System.Windows.Forms.ColumnHeader ViewState;
         private System.Windows.Forms.GroupBox groupBox4;
-        private System.Windows.Forms.Button CmdCheckAllForms;
         private System.Windows.Forms.ListView listViewForms;
         private System.Windows.Forms.ColumnHeader FormName;
         private System.Windows.Forms.ColumnHeader State;
@@ -563,6 +625,15 @@
         private System.Windows.Forms.ToolStripButton tbLoadDependency;
         private System.Windows.Forms.ToolStripButton tbDeleteSelectedDependency;
         private System.Windows.Forms.ToolStripButton tbReplaceSelectedDependency;
-        private System.Windows.Forms.ToolStripButton toolStripButton2;
+        private System.Windows.Forms.ToolStripButton tbLoadUsersView;
+        private System.Windows.Forms.ToolStripButton tbCheckAllSystemForms;
+        private System.Windows.Forms.ToolStripButton TbCheckAllSystemViews;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator5;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator6;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
     }
 }

@@ -73,6 +73,16 @@ namespace ReplaceAttributeXmPlugin.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap check_all {
+            get {
+                object obj = ResourceManager.GetObject("check_all", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap cv_IconWeekListTeam32 {
             get {
                 object obj = ResourceManager.GetObject("cv_IconWeekListTeam32", resourceCulture);
@@ -176,6 +186,16 @@ namespace ReplaceAttributeXmPlugin.Properties {
         internal static System.Drawing.Bitmap tsbLoadEntities_Image {
             get {
                 object obj = ResourceManager.GetObject("tsbLoadEntities.Image", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap uncheck_all {
+            get {
+                object obj = ResourceManager.GetObject("uncheck_all", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

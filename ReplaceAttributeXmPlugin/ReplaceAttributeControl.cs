@@ -36,20 +36,11 @@ namespace ReplaceAttributeXmPlugin
            
         }
 
-        private void tsbClose_Click(object sender, EventArgs e)
+        private void TsbClose_Click(object sender, EventArgs e)
         {
             CloseTool();
         }
-        /// <summary>
-        /// This event occurs when the plugin is closed
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void MyPluginControl_OnCloseTool(object sender, EventArgs e)
-        {
-            // Before leaving, save the settings
-            SettingsManager.Instance.Save(GetType(), mySettings);
-        }
+       
 
         /// <summary>
         /// This event occurs when the connection has been updated in XrmToolBox
@@ -57,12 +48,14 @@ namespace ReplaceAttributeXmPlugin
         public override void UpdateConnection(IOrganizationService newService, ConnectionDetail detail, string actionName, object parameter)
         {
             base.UpdateConnection(newService, detail, actionName, parameter);
+            listViewEntities.Items.Clear();
+            listViewAttributes.Items.Clear();
+            listViewAttributesReplaced.Items.Clear();
+            listViewView.Items.Clear();
+            listViewForms.Items.Clear();
+            tbCheckAllSystemForms.Text = "Check All System Forms";
+            TbCheckAllSystemViews.Text = "Check All System View";
 
-            if (mySettings != null && detail != null)
-            {
-                mySettings.LastUsedOrganizationWebappUrl = detail.WebApplicationUrl;
-                LogInfo("Connection has changed to: {0}", detail.WebApplicationUrl);
-            }
         }
         #endregion
 
@@ -136,12 +129,7 @@ namespace ReplaceAttributeXmPlugin
                     Work = (bw, e) =>
                     {
                         e.Result = CRMAction.RetrieveEntityAttributeMeta(Service, entityName);
-                        //bw.ReportProgress()
                     },
-                    //ProgressChanged = (e) =>
-                    //{
-                    //    SetWorkingMessage("");
-                    //},
                     PostWorkCallBack = e =>
                     {
                         if (e.Error != null)
@@ -209,7 +197,7 @@ namespace ReplaceAttributeXmPlugin
                                 foreach (Entity objFormEntity in formEntity)
                                 {
                                     string layoutXml = (string)objFormEntity["formxml"];
-                                    if (XmlOperation.FindXMLControl(layoutXml, attribute.LogicalName, "control", "id"))
+                                    if (XmlOperation.FindXmlControl(layoutXml, attribute.LogicalName, "control", "id"))
                                     {
                                         var displayName = "";
                                         if (objFormEntity.Attributes.Contains("name"))
@@ -250,6 +238,12 @@ namespace ReplaceAttributeXmPlugin
                                 }
                                 listViewForms.Groups.AddRange(_FormListViewGroup.ToArray<ListViewGroup>());
                                 listViewForms.Items.AddRange(_FormsListViewItemsColl.ToArray<ListViewItem>());
+                                
+                                if (_FormsListViewItemsColl.Count > 0)
+                                    tbCheckAllSystemForms.Enabled = true;
+                                else
+                                    tbCheckAllSystemForms.Enabled = false;
+
                                 ExecuteMethod(LoadViewDependency);
                             }
                         }
@@ -292,13 +286,13 @@ namespace ReplaceAttributeXmPlugin
                                 foreach (Entity objViewEntity in viewEntities)
                                 {
                                     string layoutXml = (string)objViewEntity["layoutxml"];
-                                    bool IsFound = XmlOperation.FindXMLControl(layoutXml, attributeName, "cell", "name");
+                                    bool IsFound = XmlOperation.FindXmlControl(layoutXml, attributeName, "cell", "name");
                                     if (!IsFound)
                                     {
                                         layoutXml = (string)objViewEntity["fetchxml"];
-                                        IsFound = XmlOperation.FindXMLControl(layoutXml, attributeName, "attribute", "name");
+                                        IsFound = XmlOperation.FindXmlControl(layoutXml, attributeName, "attribute", "name");
                                         if (!IsFound)
-                                            IsFound = XmlOperation.FindXMLControl(layoutXml, attributeName, "condition", "attribute");
+                                            IsFound = XmlOperation.FindXmlControl(layoutXml, attributeName, "condition", "attribute");
                                     }
                                     if (IsFound)
                                     {
@@ -358,6 +352,11 @@ namespace ReplaceAttributeXmPlugin
                                         _ViewListViewItemsColl.Add(lvItem);
                                     }
                                 }
+
+                                if (_ViewListViewItemsColl.Count > 0)
+                                    TbCheckAllSystemViews.Enabled = true;
+                                else
+                                    TbCheckAllSystemViews.Enabled = false;
 
                                 listViewView.Groups.AddRange(_ViewListViewGroup.ToArray<ListViewGroup>());
                                 listViewView.Items.AddRange(_ViewListViewItemsColl.ToArray<ListViewItem>());
@@ -446,8 +445,19 @@ namespace ReplaceAttributeXmPlugin
             if (listViewAttributes.SelectedItems.Count > 0)
             {
                 tbLoadDependency.Enabled = true;
+                tbLoadUsersView.Enabled = true;
                 TxtSearchReplaceAttributeList.Text = "";
+                tbCheckAllSystemForms.Text = "Check All System Forms";
+                TbCheckAllSystemViews.Text = "Check All System View";
+                tbCheckAllSystemForms.Enabled = false;
+                TbCheckAllSystemViews.Enabled = false;
+
                 listViewAttributesReplaced.Items.Clear();
+                listViewForms.Items.Clear();
+                listViewView.Items.Clear();
+                tbDeleteSelectedDependency.Enabled = false;
+                tbReplaceSelectedDependency.Enabled = false;
+
                 var Item = listViewAttributes.SelectedItems[0];
                 var attributeCurrent = (AttributeMetadata)Item.Tag;
                 _AttributeListViewItemsCollReplace = new List<ListViewItem>();
@@ -456,6 +466,9 @@ namespace ReplaceAttributeXmPlugin
 
                 foreach (var attribute in _attributesMetadata.Attributes)
                 {
+                    if (attribute.AttributeType == AttributeTypeCode.Virtual)
+                        continue;
+
                     LocalizedLabel localLabel = null;
                     if (attribute.DisplayName.LocalizedLabels.Count > 0)
                     {
@@ -550,55 +563,14 @@ namespace ReplaceAttributeXmPlugin
         }
         #endregion
 
-        #region Select All Options
-        private void CmdCheckAllForms_Click(object sender, EventArgs e)
-        {
-            if (CmdCheckAllForms.Text == "Check All")
-            {
-                foreach (ListViewItem item in listViewForms.Items)
-                {
-                    item.Checked = true;
-                }
-                CmdCheckAllForms.Text = "Uncheck All";
-            }
-            else
-            {
-                foreach (ListViewItem item in listViewForms.Items)
-                {
-                    item.Checked = false;
-                }
-                CmdCheckAllForms.Text = "Check All";
-            }
-        }
-
-        private void CmdCheckAllViews_Click(object sender, EventArgs e)
-        {
-            if (CmdCheckAllViews.Text == "Check All")
-            {
-                foreach (ListViewItem item in listViewView.Items)
-                {
-                    item.Checked = true;
-                }
-                CmdCheckAllViews.Text = "Uncheck All";
-            }
-            else
-            {
-                foreach (ListViewItem item in listViewView.Items)
-                {
-                    item.Checked = false;
-                }
-                CmdCheckAllViews.Text = "Check All";
-            }
-        }
-        #endregion
+        
 
         #region Delete CRM Dependency from CRM SystemForm and SystemView
         
         private void TbDeleteSelectedDependency_Click(object sender, EventArgs e)
         {
-            if (listViewEntities.SelectedItems.Count > 0)
+            if (_attributesMetadata != null && _attributesMetadata.Attributes != null && _attributesMetadata.Attributes.Count() > 0)
             {
-                var EntityItem = (EntityMetadata)listViewEntities.SelectedItems[0].Tag;
                 if (listViewAttributes.SelectedItems.Count > 0)
                 {
                     var lstItem = listViewAttributes.SelectedItems[0];
@@ -606,7 +578,7 @@ namespace ReplaceAttributeXmPlugin
                     XmlRequest objRequest = new XmlRequest()
                     {
                         IsUserView = false,
-                        Objentity = EntityItem,
+                        Objentity = _attributesMetadata,
                         ObjPlugin = this,
                         ServiceProxy = Service,
                         OldAttributeName = subitem,
@@ -622,17 +594,17 @@ namespace ReplaceAttributeXmPlugin
                         objRequest.CheckedFromItems = listViewForms.CheckedItems.Cast<ListViewItem>().ToList();
                         objRequest.CheckedItemsViews = listViewView.CheckedItems.Cast<ListViewItem>().ToList();
                         objRequest.IsViewDependency = true;
-                        XmlOperation.DeleteFormDependency(objRequest);
+                        XmlOperation.DeleteFormDependency(objRequest, null);
                     }
                     else if (listViewForms.CheckedItems.Count > 0)
                     {
                         objRequest.CheckedFromItems = listViewForms.CheckedItems.Cast<ListViewItem>().ToList();
-                        XmlOperation.DeleteFormDependency(objRequest);
+                        XmlOperation.DeleteFormDependency(objRequest, null);
                     }
                     else if (listViewView.CheckedItems.Count > 0)
                     {
                         objRequest.CheckedItemsViews = listViewView.CheckedItems.Cast<ListViewItem>().ToList();
-                        XmlOperation.DeleteViewDependency(objRequest);
+                        XmlOperation.DeleteViewDependency(objRequest, null);
                     }
                 }
                 else
@@ -642,7 +614,7 @@ namespace ReplaceAttributeXmPlugin
             }
             else
             {
-                MessageBox.Show("Please Select Entity First");
+                MessageBox.Show("Attribute Metadata not found", "Information Missing", MessageBoxButtons.OK);
             }
         }
         #endregion
@@ -684,9 +656,8 @@ namespace ReplaceAttributeXmPlugin
 
         private void TbReplaceSelectedDependency_Click(object sender, EventArgs e)
         {
-            if (listViewEntities.SelectedItems.Count > 0)
+            if (_attributesMetadata != null && _attributesMetadata.Attributes != null && _attributesMetadata.Attributes.Count() > 0)
             {
-                var EntityItem = (EntityMetadata)listViewEntities.SelectedItems[0].Tag;
                 if (listViewAttributesReplaced.SelectedItems.Count > 0)
                 {
                     if (listViewAttributes.SelectedItems.Count > 0)
@@ -700,7 +671,7 @@ namespace ReplaceAttributeXmPlugin
                         XmlRequest objRequest = new XmlRequest()
                         {
                             IsUserView = false,
-                            Objentity = EntityItem,
+                            Objentity = _attributesMetadata,
                             ObjPlugin = this,
                             ServiceProxy = Service,
                             OldAttributeName = subitem,
@@ -716,17 +687,17 @@ namespace ReplaceAttributeXmPlugin
                             objRequest.CheckedFromItems = listViewForms.CheckedItems.Cast<ListViewItem>().ToList();
                             objRequest.CheckedItemsViews = listViewView.CheckedItems.Cast<ListViewItem>().ToList();
                             objRequest.IsViewDependency = true;
-                            XmlOperation.ReplaceFormDependency(objRequest);
+                            XmlOperation.ReplaceFormDependency(objRequest, null);
                         }
                         else if (listViewForms.CheckedItems.Count > 0)
                         {
                             objRequest.CheckedFromItems = listViewForms.CheckedItems.Cast<ListViewItem>().ToList();
-                            XmlOperation.ReplaceFormDependency(objRequest);
+                            XmlOperation.ReplaceFormDependency(objRequest, null);
                         }
                         else if (listViewView.CheckedItems.Count > 0)
                         {
                             objRequest.CheckedItemsViews = listViewView.CheckedItems.Cast<ListViewItem>().ToList();
-                            XmlOperation.ReplaceViewDependency(objRequest);
+                            XmlOperation.ReplaceViewDependency(objRequest, null);
                         }
                     }
                     else
@@ -741,15 +712,119 @@ namespace ReplaceAttributeXmPlugin
             }
             else
             {
-                MessageBox.Show("Please Select Entity First");
+                MessageBox.Show("Attribute Metadata not found", "Information Missing", MessageBoxButtons.OK);
             }
         }
 
-        private void toolStripButton2_Click(object sender, EventArgs e)
+        private void TbLoadUsersView_Click(object sender, EventArgs e)
         {
-           
+            if (_attributesMetadata != null && _attributesMetadata.Attributes != null && _attributesMetadata.Attributes.Count() > 0)
+            {
+                if (listViewAttributes.SelectedItems.Count > 0)
+                {
+                    var Item = listViewAttributes.SelectedItems[0];
+                    var attributeCurrent = (AttributeMetadata)Item.Tag;
+                    UserViewRequest userViewRequest = new UserViewRequest()
+                    {
+                        AttributeSelected = attributeCurrent.LogicalName,
+                       
+                        oldAttributeDisplayName = Item.Text,
+                        Plugin = this,
+                        serviceProxy = Service,
+                        objEntity = _attributesMetadata
+                    };
+
+                    if (listViewAttributesReplaced.SelectedItems.Count > 0)
+                    {
+                        var ItemReplace = listViewAttributesReplaced.SelectedItems[0];
+                        var attributeCurrentReplace = (AttributeMetadata)ItemReplace.Tag;
+                        userViewRequest.newAttributeDisplayName = ItemReplace.Text;
+                        userViewRequest.newAttributeName = attributeCurrentReplace.LogicalName;
+                        FromUserView objform = new FromUserView(userViewRequest);
+                        objform.ShowDialog();
+                    }
+                    else
+                    {
+                        FromUserView objform = new FromUserView(userViewRequest);
+                        objform.ShowDialog();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Please Select Attribute First");
+                }
+            }
+            else
+            {
+                MessageBox.Show("Attribute Metadata not found", "Information Missing", MessageBoxButtons.OK);
+            }
         }
 
-        
+        private void listViewView_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void groupBox1_Enter(object sender, EventArgs e)
+        {
+
+        }
+
+        private void ReplaceAttributeControl_Resize(object sender, EventArgs e)
+        {
+            groupBox1.Width =  Width - (groupBox2.Width + groupBox3.Width+groupBox6.Width + 20);
+            groupBox4.Height = Convert.ToInt32(Height / 2.0 - 70);
+            groupBox5.Height = Convert.ToInt32(Height / 2.0 -5);
+        }
+
+       
+        private void toolStripButton3_Click(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void TbCheckAllSystemForms_Click(object sender, EventArgs e)
+        {
+            if (tbCheckAllSystemForms.Text == "Check All System Forms")
+            {
+                foreach (ListViewItem item in listViewForms.Items)
+                {
+                    item.Checked = true;
+                    tbCheckAllSystemForms.Image = Properties.Resources.check_all;
+                }
+                tbCheckAllSystemForms.Text = "Uncheck All System Forms";
+            }
+            else
+            {
+                foreach (ListViewItem item in listViewForms.Items)
+                {
+                    item.Checked = false;
+                    tbCheckAllSystemForms.Image = Properties.Resources.uncheck_all;
+                }
+                tbCheckAllSystemForms.Text = "Check All System Forms";
+            }
+        }
+
+        private void TbCheckAllSystemViews_Click(object sender, EventArgs e)
+        {
+            if (TbCheckAllSystemViews.Text == "Check All System View")
+            {
+                foreach (ListViewItem item in listViewView.Items)
+                {
+                    item.Checked = true;
+                    TbCheckAllSystemViews.Image = Properties.Resources.check_all;
+                }
+                TbCheckAllSystemViews.Text = "Uncheck All System View";
+            }
+            else
+            {
+                foreach (ListViewItem item in listViewView.Items)
+                {
+                    item.Checked = false;
+                    TbCheckAllSystemViews.Image = Properties.Resources.uncheck_all;
+                }
+                TbCheckAllSystemViews.Text = "Check All System View";
+            }
+        }
     }
 }
