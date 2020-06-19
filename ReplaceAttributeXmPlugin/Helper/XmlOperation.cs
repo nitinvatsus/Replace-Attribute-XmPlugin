@@ -1,6 +1,5 @@
 ﻿using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
-using Microsoft.Xrm.Sdk.Client;
 using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Tooling.Connector;
 using System;
@@ -12,7 +11,7 @@ using XrmToolBox.Extensibility;
 
 namespace ReplaceAttributeXmPlugin.Helper
 {
-    public static class XmlOperationss
+    public static class XmlOperation
     {
         public delegate void TaskCompletedCallBack(XmlRequest request);
 
@@ -22,52 +21,51 @@ namespace ReplaceAttributeXmPlugin.Helper
             DeleteFormDependencyRecuricive(request, checkedItemsProcess, taskCompletedCallBack);
         }
        
-        private static void DeleteFormDependencyRecuricive(XmlRequest Request, List<ClsViiewItemsChecked> checkedItems, TaskCompletedCallBack taskCompletedCallBack)
+        private static void DeleteFormDependencyRecuricive(XmlRequest request, List<ClsViiewItemsChecked> checkedItems, TaskCompletedCallBack taskCompletedCallBack)
         {
-            if (checkedItems.Where(c => c.checkItemProcessed == false).Any())
+            if (checkedItems.All(c => c.CheckItemProcessed)) return;
             {
-                ClsViiewItemsChecked objListItem = checkedItems.Where(c => c.checkItemProcessed == false).FirstOrDefault();
-                Entity objEnt = (Entity)objListItem.checkedItem.Tag;
-                if (objEnt.Attributes.Contains("formxml"))
+                var objListItem = checkedItems.FirstOrDefault(c => c.CheckItemProcessed == false);
+                if (objListItem == null) return;
                 {
-                    string layoutXml = (string)objEnt["formxml"];
-                    XmlOperationResult objResult = PerformXMLOperation(layoutXml, Request.OldAttributeName, "control", "id", "row");
+                    var objEnt = (Entity)objListItem.CheckedItem.Tag;
+                    if (!objEnt.Attributes.Contains("formxml")) return;
+                    var layoutXml = (string)objEnt["formxml"];
+                    var objResult = PerformXmlOperation(layoutXml, request.OldAttributeName, "control", "id", "row");
                     objEnt["formxml"] = objResult.PublishXml;
-                    Request.ObjPlugin.WorkAsync(new WorkAsyncInfo
+                    request.ObjPlugin.WorkAsync(new WorkAsyncInfo
                     {
-                        Message = "Deleting Dependency from  " + objListItem.checkedItem.Text + " for Attribute Name " + Request.OldAttributeName,
+                        Message = "Deleting Dependency from  " + objListItem.CheckedItem.Text + " for Attribute Name " + request.OldAttributeName,
                         Work = (bw, e) =>
                         {
                             try
                             {
-                                Request.ServiceProxy.Update(objEnt);
+                                request.ServiceProxy.Update(objEnt);
                             }
                             catch(Exception exc)
                             {
-                                MessageBox.Show(Request.ObjPlugin.ParentForm, exc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                MessageBox.Show(request.ObjPlugin.ParentForm, exc.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             }
                         },
                         PostWorkCallBack = e =>
                         {
                             if (e.Error != null)
                             {
-                                MessageBox.Show(Request.ObjPlugin.ParentForm, e.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                MessageBox.Show(request.ObjPlugin.ParentForm, e.Error.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             }
                             else
                             {
-                                objListItem.checkItemProcessed = true;
-                                DeleteFormDependencyRecuricive(Request, checkedItems, taskCompletedCallBack);
-                                if (!checkedItems.Where(c => c.checkItemProcessed == false).Any())
+                                objListItem.CheckItemProcessed = true;
+                                DeleteFormDependencyRecuricive(request, checkedItems, taskCompletedCallBack);
+                                if (checkedItems.Any(c => c.CheckItemProcessed == false)) return;
+                                if (request.IsViewDependency)
                                 {
-                                    if (Request.IsViewDependency)
-                                    {
-                                        DeleteViewDependency(Request, taskCompletedCallBack);
-                                    }
-                                    else
-                                    {
-                                        PublishEntity(Request.ObjPlugin, Request.ServiceProxy, Request.Objentity);
-                                        taskCompletedCallBack?.Invoke(Request);
-                                    }
+                                    DeleteViewDependency(request, taskCompletedCallBack);
+                                }
+                                else
+                                {
+                                    PublishEntity(request.ObjPlugin, request.ServiceProxy, request.Objentity);
+                                    taskCompletedCallBack?.Invoke(request);
                                 }
                             }
                         }
@@ -76,60 +74,61 @@ namespace ReplaceAttributeXmPlugin.Helper
             }
         }
 
-        public static void DeleteViewDependency(XmlRequest Request, TaskCompletedCallBack taskCompletedCallBack)
+        public static void DeleteViewDependency(XmlRequest request, TaskCompletedCallBack taskCompletedCallBack)
         {
-            List<ClsViiewItemsChecked> checkedItemsProcess = ConvertListViweItems(Request.CheckedItemsViews);
-            DeleteViewDependencyRecuricive(Request, checkedItemsProcess, taskCompletedCallBack);
+            List<ClsViiewItemsChecked> checkedItemsProcess = ConvertListViweItems(request.CheckedItemsViews);
+            DeleteViewDependencyRecuricive(request, checkedItemsProcess, taskCompletedCallBack);
         }
 
-        private static void DeleteViewDependencyRecuricive(XmlRequest Request, List<ClsViiewItemsChecked> checkedItems, TaskCompletedCallBack taskCompletedCallBack)
+        private static void DeleteViewDependencyRecuricive(XmlRequest request, List<ClsViiewItemsChecked> checkedItems, TaskCompletedCallBack taskCompletedCallBack)
         {
-            if (checkedItems.Where(c => c.checkItemProcessed == false).Any())
+            if (checkedItems.Any(c => c.CheckItemProcessed == false))
             {
-                ClsViiewItemsChecked objListItem = checkedItems.Where(c => c.checkItemProcessed == false).FirstOrDefault();
-                Entity objEnt = (Entity)objListItem.checkedItem.Tag;
-                if (Request.IsUserView)
+                var objListItem = checkedItems.FirstOrDefault(c => c.CheckItemProcessed == false);
+                if (objListItem == null) return;
                 {
-                    ((CrmServiceClient)Request.ServiceProxy).CallerId = ((EntityReference)objEnt.Attributes["ownerid"]).Id;
-                }
-                XmlResults objResult = InternalDeleteViewDependency(Request.OldAttributeName, objListItem.checkedItem);
-                objResult.oldFetchXml = (string)objEnt["fetchxml"];
-                if (objResult.LayoutXml != string.Empty)
-                    objEnt["layoutxml"] = objResult.LayoutXml;
-                if (objResult.FetchXml != string.Empty)
-                    objEnt["fetchxml"] = objResult.FetchXml;
-                Request.ObjPlugin.WorkAsync(new WorkAsyncInfo
-                {
-                    Message = "Deleting Dependency View  " + objListItem.checkedItem.Text + " for Attribute Name " + Request.OldAttributeName,
-                    Work = (bw, e) =>
+                    var objEnt = (Entity)objListItem.CheckedItem.Tag;
+                    if (request.IsUserView)
                     {
-                        try
-                        {
-                            Request.ServiceProxy.Update(objEnt);
-                        }catch(Exception exc)
-                        {
-                            MessageBox.Show(Request.ObjPlugin.ParentForm, exc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
-                    },
-                    PostWorkCallBack = e =>
+                        ((CrmServiceClient)request.ServiceProxy).CallerId = ((EntityReference)objEnt.Attributes["ownerid"]).Id;
+                    }
+                    var objResult = InternalDeleteViewDependency(request.OldAttributeName, objListItem.CheckedItem);
+                    objResult.OldFetchXml = (string)objEnt["fetchxml"];
+                    if (objResult.LayoutXml != string.Empty)
+                        objEnt["layoutxml"] = objResult.LayoutXml;
+                    if (objResult.FetchXml != string.Empty)
+                        objEnt["fetchxml"] = objResult.FetchXml;
+                    request.ObjPlugin.WorkAsync(new WorkAsyncInfo
                     {
-                        if (e.Error != null)
+                        Message = "Deleting Dependency View  " + objListItem.CheckedItem.Text + " for Attribute Name " + request.OldAttributeName,
+                        Work = (bw, e) =>
                         {
-                            MessageBox.Show(Request.ObjPlugin.ParentForm, e.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
-                        else
-                        {
-                            objListItem.checkItemProcessed = true;
-                            DeleteViewDependencyRecuricive(Request, checkedItems, taskCompletedCallBack);
-                            if (!checkedItems.Where(c => c.checkItemProcessed == false).Any())
+                            try
                             {
-                                if (!Request.IsUserView)
-                                    PublishEntity(Request.ObjPlugin, Request.ServiceProxy, Request.Objentity);
-                                taskCompletedCallBack?.Invoke(Request);
+                                request.ServiceProxy.Update(objEnt);
+                            }catch(Exception exc)
+                            {
+                                MessageBox.Show(request.ObjPlugin.ParentForm, exc.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            }
+                        },
+                        PostWorkCallBack = e =>
+                        {
+                            if (e.Error != null)
+                            {
+                                MessageBox.Show(request.ObjPlugin.ParentForm, e.Error.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            }
+                            else
+                            {
+                                objListItem.CheckItemProcessed = true;
+                                DeleteViewDependencyRecuricive(request, checkedItems, taskCompletedCallBack);
+                                if (checkedItems.Any(c => c.CheckItemProcessed == false)) return;
+                                if (!request.IsUserView)
+                                    PublishEntity(request.ObjPlugin, request.ServiceProxy, request.Objentity);
+                                taskCompletedCallBack?.Invoke(request);
                             }
                         }
-                    }
-                });
+                    });
+                }
             }
         }
 
@@ -141,88 +140,94 @@ namespace ReplaceAttributeXmPlugin.Helper
         }
         private static void ReplaceFormDependencyRecuricive(XmlRequest request, List<ClsViiewItemsChecked> checkedItems, TaskCompletedCallBack taskCompletedCallBack)
         {
-            if (checkedItems.Where(c => c.checkItemProcessed == false).Any())
+            if (checkedItems.All(c => c.CheckItemProcessed)) return;
             {
-                ClsViiewItemsChecked objListItem = checkedItems.Where(c => c.checkItemProcessed == false).FirstOrDefault();
-                Entity objEnt = (Entity)objListItem.checkedItem.Tag;
-                if (objEnt.Attributes.Contains("formxml"))
+                var objListItem = checkedItems.FirstOrDefault(c => c.CheckItemProcessed == false);
+                if (objListItem == null) return;
                 {
-                    string layoutXml = (string)objEnt["formxml"];
-                    if (layoutXml.IndexOf(request.OldAttributeName) >= 0)
+                    var objEnt = (Entity)objListItem.CheckedItem.Tag;
+                    if (!objEnt.Attributes.Contains("formxml")) return;
+                    var layoutXml = (string)objEnt["formxml"];
+                    if (layoutXml.IndexOf(request.OldAttributeName, StringComparison.Ordinal) < 0) return;
+                    var doc = new XmlDocument();
+                    doc.LoadXml(layoutXml);
+                    var allControls = doc.GetElementsByTagName("control");
+                    var control = allControls.Cast<XmlNode>().FirstOrDefault(p => p.Attributes != null && p.Attributes["id"].InnerText == request.OldAttributeName);
+                    if (control == null) return;
                     {
-                        XmlDocument doc = new XmlDocument();
-                        doc.LoadXml(layoutXml);
-                        var allControls = doc.GetElementsByTagName("control");
-                        var control = allControls.Cast<XmlNode>().Where(p => p.Attributes["id"].InnerText == request.OldAttributeName).FirstOrDefault();
-                        if (control != null)
+                        var controlParentCell = control.ParentNode;
+                        var labelNode = controlParentCell?.SelectNodes(@"labels//label");
+                        if (labelNode != null && labelNode.Count > 0)
                         {
-                            XmlNode controlParentCell = control.ParentNode;
-                            if (controlParentCell != null)
-                            {
-                                var labelNode = controlParentCell.SelectNodes(@"labels//label");
-                                if (labelNode != null && labelNode.Count > 0)
-                                {
-                                    labelNode[0].Attributes["description"].InnerText = request.ObjAttDataReplace.DisplayName.LocalizedLabels.Where(l => l.LanguageCode == 1033).FirstOrDefault().Label;
-                                }
-                            }
-                            var findSimilerAttribute = request.Objentity.Attributes.Where(K => K.AttributeType == request.ObjAttDataReplace.AttributeType);
-                            XmlNode similerClassControl = null;
-                            foreach (var attSimilierControl in findSimilerAttribute)
-                            {
-                                similerClassControl = allControls.Cast<XmlNode>().Where(p => p.Attributes["id"].InnerText == attSimilierControl.LogicalName).FirstOrDefault();
-                                if (similerClassControl != null)
-                                    break;
-                            }
+                            var xmlAttributeCollection = labelNode[0].Attributes;
+                            if (xmlAttributeCollection != null)
+                                xmlAttributeCollection["description"].InnerText = request.ObjAttDataReplace.DisplayName
+                                    .LocalizedLabels.FirstOrDefault(l => l.LanguageCode == 1033)
+                                    ?.Label ?? string.Empty;
+                        }
+                        var findSimilerAttribute = request.Objentity.Attributes.Where(k => k.AttributeType == request.ObjAttDataReplace.AttributeType);
+                        XmlNode similerClassControl = null;
+                        foreach (var attSimilierControl in findSimilerAttribute)
+                        {
+                            similerClassControl = allControls.Cast<XmlNode>().FirstOrDefault(p => p.Attributes != null && p.Attributes["id"].InnerText == attSimilierControl.LogicalName);
                             if (similerClassControl != null)
+                                break;
+                        }
+                        if (similerClassControl != null)
+                        {
+                            if (control.Attributes != null)
                             {
                                 control.Attributes["id"].InnerText = request.ReplaceAttributeName;
-                                control.Attributes["classid"].InnerText = similerClassControl.Attributes["classid"].InnerText;
-                                control.Attributes["datafieldname"].InnerText = request.ReplaceAttributeName;
-                                objEnt["formxml"] = doc.InnerXml;
-                                request.ObjPlugin.WorkAsync(new WorkAsyncInfo
+                                if (similerClassControl.Attributes != null)
                                 {
-                                    Message = "Replacing Dependency Form  " + objListItem.checkedItem.Text + "\n Old Attribute Name " + request.OldAttributeName + " with New Attribute Name: " + request.ReplaceAttributeName,
-                                    Work = (bw, e) =>
+                                    control.Attributes["classid"].InnerText =
+                                        similerClassControl.Attributes["classid"].InnerText;
+                                    control.Attributes["datafieldname"].InnerText = request.ReplaceAttributeName;
+                                }
+                            }
+
+                            objEnt["formxml"] = doc.InnerXml;
+                            request.ObjPlugin.WorkAsync(new WorkAsyncInfo
+                            {
+                                Message = "Replacing Dependency Form  " + objListItem.CheckedItem.Text + "\n Old Attribute Name " + request.OldAttributeName + " with New Attribute Name: " + request.ReplaceAttributeName,
+                                Work = (bw, e) =>
+                                {
+                                    try
                                     {
-                                        try
-                                        {
-                                            request.ServiceProxy.Update(objEnt);
-                                        }
-                                        catch(Exception exc)
-                                        {
-                                            MessageBox.Show(request.ObjPlugin.ParentForm, exc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                                        }
-                                    },
-                                    PostWorkCallBack = e =>
+                                        request.ServiceProxy.Update(objEnt);
+                                    }
+                                    catch(Exception exc)
                                     {
-                                        if (e.Error != null)
+                                        MessageBox.Show(request.ObjPlugin.ParentForm, exc.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                    }
+                                },
+                                PostWorkCallBack = e =>
+                                {
+                                    if (e.Error != null)
+                                    {
+                                        MessageBox.Show(request.ObjPlugin.ParentForm, e.Error.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                    }
+                                    else
+                                    {
+                                        objListItem.CheckItemProcessed = true;
+                                        ReplaceFormDependencyRecuricive(request, checkedItems, taskCompletedCallBack);
+                                        if (checkedItems.Any(c => c.CheckItemProcessed == false)) return;
+                                        if (request.IsViewDependency)
                                         {
-                                            MessageBox.Show(request.ObjPlugin.ParentForm, e.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                            ReplaceViewDependency(request, taskCompletedCallBack);
                                         }
                                         else
                                         {
-                                            objListItem.checkItemProcessed = true;
-                                            ReplaceFormDependencyRecuricive(request, checkedItems, taskCompletedCallBack);
-                                            if (!checkedItems.Where(c => c.checkItemProcessed == false).Any())
-                                            {
-                                                if (request.IsViewDependency)
-                                                {
-                                                    ReplaceViewDependency(request, taskCompletedCallBack);
-                                                }
-                                                else
-                                                {
-                                                    PublishEntity(request.ObjPlugin, request.ServiceProxy, request.Objentity);
-                                                    taskCompletedCallBack?.Invoke(request);
-                                                }
-                                            }
+                                            PublishEntity(request.ObjPlugin, request.ServiceProxy, request.Objentity);
+                                            taskCompletedCallBack?.Invoke(request);
                                         }
                                     }
-                                });
-                            }
-                            else
-                            {
-                                MessageBox.Show("Replace Attribute data type shold be same or same datatype control should be availbale on from : " + objListItem.checkedItem.Text);
-                            }
+                                }
+                            });
+                        }
+                        else
+                        {
+                            MessageBox.Show(@"Replace Attribute data type shold be same or same datatype control should be availbale on from : " + objListItem.CheckedItem.Text);
                         }
                     }
                 }
@@ -231,29 +236,30 @@ namespace ReplaceAttributeXmPlugin.Helper
 
         public static void ReplaceViewDependency(XmlRequest request, TaskCompletedCallBack taskCompletedCallBack)
         {
-            List<ClsViiewItemsChecked> checkedItemsProcess = ConvertListViweItems(request.CheckedItemsViews);
+            var checkedItemsProcess = ConvertListViweItems(request.CheckedItemsViews);
             ReplaceViewDependencyRecuricive(request, checkedItemsProcess, taskCompletedCallBack);
         }
         private static void ReplaceViewDependencyRecuricive(XmlRequest request, List<ClsViiewItemsChecked> checkedItems, TaskCompletedCallBack taskCompletedCallBack)
         {
-            if (checkedItems.Where(c => c.checkItemProcessed == false).Any())
+            if (checkedItems.All(c => c.CheckItemProcessed)) return;
             {
-                ClsViiewItemsChecked objListItem = checkedItems.Where(c => c.checkItemProcessed == false).FirstOrDefault();
-                Entity objEnt = (Entity)objListItem.checkedItem.Tag;
-                if (request.IsUserView)
+                var objListItem = checkedItems.FirstOrDefault(c => c.CheckItemProcessed == false);
+                if (objListItem == null) return;
                 {
-                    ((CrmServiceClient)request.ServiceProxy).CallerId = ((EntityReference)objEnt.Attributes["ownerid"]).Id;
-                }
-                XmlResults objResult = InternalReplaceViewDependency(request.OldAttributeName, request.ReplaceAttributeName, objListItem.checkedItem);
-                if (objResult.IsPublish)
-                {
+                    var objEnt = (Entity)objListItem.CheckedItem.Tag;
+                    if (request.IsUserView)
+                    {
+                        ((CrmServiceClient)request.ServiceProxy).CallerId = ((EntityReference)objEnt.Attributes["ownerid"]).Id;
+                    }
+                    var objResult = InternalReplaceViewDependency(request.OldAttributeName, request.ReplaceAttributeName, objListItem.CheckedItem);
+                    if (!objResult.IsPublish) return;
                     if (objResult.LayoutXml != string.Empty)
                         objEnt["layoutxml"] = objResult.LayoutXml;
                     if (objResult.FetchXml != string.Empty)
                         objEnt["fetchxml"] = objResult.FetchXml;
                     request.ObjPlugin.WorkAsync(new WorkAsyncInfo
                     {
-                        Message = "Replacing Dependency View  " + objListItem.checkedItem.Text + "\n Old Attribute Name " + request.OldAttributeName + " with New Attribute Name: " + request.ReplaceAttributeName,
+                        Message = "Replacing Dependency View  " + objListItem.CheckedItem.Text + "\n Old Attribute Name " + request.OldAttributeName + " with New Attribute Name: " + request.ReplaceAttributeName,
                         Work = (bw, e) =>
                         {
                             try
@@ -262,16 +268,23 @@ namespace ReplaceAttributeXmPlugin.Helper
                             }
                             catch(Exception exc)
                             {
-                                MessageBox.Show(request.ObjPlugin.ParentForm, "Error in Fetch Xml Update \n " + exc.Message + "\n Try Old Fetch Xml and New Layout Xml Update !!! \n Replacing Dependency View  " + "\n Old Attribute Name " + request.OldAttributeName + " with New Attribute Name: " + request.ReplaceAttributeName
-                                    , "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                MessageBox.Show(request.ObjPlugin.ParentForm, @"Error in Fetch Xml Update 
+                                                                                     " + exc.Message + @"
+                                                                                     Try Old Fetch Xml and New Layout Xml Update !!! 
+                                                                                     Replacing Dependency View  " + @"
+                                                                                     Old Attribute Name " + request.OldAttributeName + @" with New Attribute Name: " + request.ReplaceAttributeName
+                                                                                                                        , @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                                 try
                                 {
-                                    objEnt["fetchxml"] = objResult.oldFetchXml;
+                                    objEnt["fetchxml"] = objResult.OldFetchXml;
                                     request.ServiceProxy.Update(objEnt);
                                 }
                                 catch {
-                                    MessageBox.Show(request.ObjPlugin.ParentForm, "Error in Old Fetch Xml Update \n " + exc.Message + "\n Replacing Dependency View  " + "\n Old Attribute Name " + request.OldAttributeName + " with New Attribute Name: " + request.ReplaceAttributeName
-                                       , "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                    MessageBox.Show(request.ObjPlugin.ParentForm, @"Error in Old Fetch Xml Update 
+                                                                                         " + exc.Message + @"
+                                                                                         Replacing Dependency View  " + @"
+                                                                                         Old Attribute Name " + request.OldAttributeName + @" with New Attribute Name: " + request.ReplaceAttributeName
+                                                                                                                                , @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                                 }
                             }
                         },
@@ -279,13 +292,13 @@ namespace ReplaceAttributeXmPlugin.Helper
                         {
                             if (e.Error != null)
                             {
-                                MessageBox.Show(request.ObjPlugin.ParentForm, e.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                MessageBox.Show(request.ObjPlugin.ParentForm, e.Error.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             }
                             else
                             {
-                                objListItem.checkItemProcessed = true;
+                                objListItem.CheckItemProcessed = true;
                                 ReplaceViewDependencyRecuricive(request, checkedItems, taskCompletedCallBack);
-                                if (checkedItems.All(c => c.checkItemProcessed))
+                                if (checkedItems.All(c => c.CheckItemProcessed))
                                 {
                                     if (!request.IsUserView)
                                     {
@@ -312,130 +325,125 @@ namespace ReplaceAttributeXmPlugin.Helper
             return control.Any();
         }
 
-        private static XmlResults InternalReplaceViewDependency(string oldAttributeName, string replaceAttributeName, ListViewItem Item)
+        private static XmlResults InternalReplaceViewDependency(string oldAttributeName, string replaceAttributeName, ListViewItem item)
         {
-            XmlResults objResult = new XmlResults(false);
-            Entity objEnt = (Entity)Item.Tag;
+            var objResult = new XmlResults(false);
+            var objEnt = (Entity)item.Tag;
             if (objEnt.Attributes.Contains("layoutxml"))
             {
-                string layoutXml = (string)objEnt["layoutxml"];
-                if (layoutXml.IndexOf(oldAttributeName) >= 0)
+                var layoutXml = (string)objEnt["layoutxml"];
+                if (layoutXml.IndexOf(oldAttributeName, StringComparison.Ordinal) >= 0)
                 {
                     objResult.IsPublish = true;
                     objResult.LayoutXml = layoutXml.Replace(oldAttributeName, replaceAttributeName);
                 }
             }
-            if (objEnt.Attributes.Contains("fetchxml"))
+
+            if (!objEnt.Attributes.Contains("fetchxml")) return objResult;
             {
-                string layoutXml = (string)objEnt["fetchxml"];
-                if (layoutXml.IndexOf(oldAttributeName) >= 0)
-                {
-                    objResult.IsPublish = true;
-                    objResult.oldFetchXml = layoutXml;
-                    objResult.FetchXml = layoutXml.Replace(oldAttributeName, replaceAttributeName);
-                }
+                var layoutXml = (string)objEnt["fetchxml"];
+                if (layoutXml.IndexOf(oldAttributeName, StringComparison.Ordinal) < 0) return objResult;
+                objResult.IsPublish = true;
+                objResult.OldFetchXml = layoutXml;
+                objResult.FetchXml = layoutXml.Replace(oldAttributeName, replaceAttributeName);
             }
             return objResult;
         }
 
-        private static XmlResults InternalDeleteViewDependency(string attributeName, ListViewItem Item)
+        private static XmlResults InternalDeleteViewDependency(string attributeName, ListViewItem item)
         {
-            XmlResults objResult = new XmlResults(false);
-            Entity objEnt = (Entity)Item.Tag;
+            var objResult = new XmlResults(false);
+            var objEnt = (Entity)item.Tag;
             if (objEnt.Attributes.Contains("layoutxml"))
             {
-                string layoutXml = (string)objEnt["layoutxml"];
+                var layoutXml = (string)objEnt["layoutxml"];
 
                 ////Remove Column from View
-                XmlOperationResult opResult = PerformXMLOperation(layoutXml, attributeName, "cell", "name");
+                var opResult = PerformXmlOperation(layoutXml, attributeName, "cell", "name");
                 objResult.IsPublish = opResult.IsPublish;
                 objResult.LayoutXml = opResult.PublishXml;
             }
-            if (objEnt.Attributes.Contains("fetchxml"))
+
+            if (!objEnt.Attributes.Contains("fetchxml")) return objResult;
             {
-                //Remove Attribute from fetchxml
-                string layoutXml = (string)objEnt["fetchxml"];
-                XmlOperationResult opResult = PerformXMLOperation(layoutXml, attributeName, "attribute", "name");
+                //Remove Attribute from fetch xml
+                var layoutXml = (string)objEnt["fetchxml"];
+                var opResult = PerformXmlOperation(layoutXml, attributeName, "attribute", "name");
                 if (!objResult.IsPublish)
                     objResult.IsPublish = opResult.IsPublish;
                 objResult.FetchXml = opResult.PublishXml;
 
-                //Remove Condition from fetchxml
-                opResult = PerformXMLOperation(objResult.FetchXml, attributeName, "condition", "attribute");
+                //Remove Condition from fetch xml
+                opResult = PerformXmlOperation(objResult.FetchXml, attributeName, "condition", "attribute");
                 if (!objResult.IsPublish)
                     objResult.IsPublish = opResult.IsPublish;
                 objResult.FetchXml = opResult.PublishXml;
             }
             return objResult;
         }
-        private static XmlOperationResult PerformXMLOperation(string xmlString, string attributeName, string elementTagName, string searchElementProperty)
+        private static XmlOperationResult PerformXmlOperation(string xmlString, string attributeName, string elementTagName, string searchElementProperty)
         {
-            XmlDocument doc = new XmlDocument();
+            var doc = new XmlDocument();
             doc.LoadXml(xmlString);
             var allControls = doc.GetElementsByTagName(elementTagName);
-            var control = allControls.Cast<XmlNode>().Where(p => p.Attributes[searchElementProperty].InnerText == attributeName);
-            if (control != null && control.Count() > 0)
-            {
-                control.FirstOrDefault().ParentNode.RemoveChild(control.FirstOrDefault());
-                return (new XmlOperationResult(doc.InnerXml, true));
-            }
-            return (new XmlOperationResult(doc.InnerXml, false));
+            var control = allControls.Cast<XmlNode>().Where(p => p.Attributes != null && p.Attributes[searchElementProperty].InnerText == attributeName);
+            var xmlNodes = control as XmlNode[] ?? control.ToArray();
+            if (!xmlNodes.Any()) return (new XmlOperationResult(doc.InnerXml, false));
+            var parentNode = xmlNodes.FirstOrDefault()?.ParentNode;
+            parentNode?.RemoveChild(xmlNodes.FirstOrDefault() ?? throw new InvalidOperationException());
+            return (new XmlOperationResult(doc.InnerXml, true));
         }
-        private static XmlOperationResult PerformXMLOperation(string formXml, string attributeName, string elementTagName, string searchElementProperty, string searchNodeName)
+        private static XmlOperationResult PerformXmlOperation(string formXml, string attributeName, string elementTagName, string searchElementProperty, string searchNodeName)
         {
-            XmlDocument doc = new XmlDocument();
+            var doc = new XmlDocument();
             doc.LoadXml(formXml);
             var allControls = doc.GetElementsByTagName(elementTagName);
-            var control = allControls.Cast<XmlNode>().Where(p => p.Attributes[searchElementProperty].InnerText == attributeName);
-            if (control != null && control.Count() > 0)
+            var control = allControls.Cast<XmlNode>().Where(p => p.Attributes != null && p.Attributes[searchElementProperty].InnerText == attributeName);
+            var xmlNodes = control as XmlNode[] ?? control.ToArray();
+            if (!xmlNodes.Any()) return (new XmlOperationResult("", false));
+            var parentNode = xmlNodes.FirstOrDefault()?.ParentNode;
+            if (parentNode != null && parentNode.Name == searchNodeName)
             {
-                if (control.FirstOrDefault().ParentNode != null && control.FirstOrDefault().ParentNode.Name == searchNodeName)
-                {
-                    control.FirstOrDefault().ParentNode.RemoveChild(control.FirstOrDefault());
-                    return (new XmlOperationResult(doc.InnerXml, true));
-                }
-                else
-                {
-                    XmlNode findNode = FindControlParentNode(control.FirstOrDefault(), searchNodeName);
-                    if (findNode != null && findNode.Name == searchNodeName)
-                    {
-                        findNode.ParentNode.RemoveChild(findNode);
-                        return (new XmlOperationResult(doc.InnerXml, true));
-                    }
-                }
+                var xmlNode = xmlNodes.FirstOrDefault()?.ParentNode;
+                xmlNode?.RemoveChild(xmlNodes.FirstOrDefault() ?? throw new InvalidOperationException());
+                return (new XmlOperationResult(doc.InnerXml, true));
             }
-            return (new XmlOperationResult("", false));
+            else
+            {
+                var findNode = FindControlParentNode(xmlNodes.FirstOrDefault(), searchNodeName);
+                if (findNode == null || findNode.Name != searchNodeName) return (new XmlOperationResult("", false));
+                findNode.ParentNode?.RemoveChild(findNode);
+                return (new XmlOperationResult(doc.InnerXml, true));
+            }
         }
-        private static XmlNode FindControlParentNode(XmlNode ControlNode, string searchNodeName)
+        private static XmlNode FindControlParentNode(XmlNode controlNode, string searchNodeName)
         {
-            XmlNode findNode = null;
-            if (ControlNode != null)
+            if (controlNode == null) return null;
+            var findNode = controlNode.ParentNode;
+            var parentCount = 0;
+            do
             {
-                findNode = ControlNode.ParentNode;
-                int parentCount = 0;
-                do
-                {
-                    if (findNode == null)
-                        break;
-                    if (parentCount > 5)
-                        break;
+                if (findNode == null)
+                    break;
+                if (parentCount > 5)
+                    break;
 
-                    findNode = findNode.ParentNode;
-                    parentCount++;
-                } while (findNode.Name != searchNodeName);
-            }
+                findNode = findNode.ParentNode;
+                parentCount++;
+            } while (findNode != null && findNode.Name != searchNodeName);
             return findNode;
         }
 
-        private static void PublishEntity(PluginControlBase objPlugin, IOrganizationService _serviceProxy, EntityMetadata EntityItem)
+        private static void PublishEntity(PluginControlBase objPlugin, IOrganizationService serviceProxy, EntityMetadata entityItem)
         {
-            string paramXml = string.Format(" <importexportxml><entities><entity>{0}</entity></entities><nodes/><securityroles/><settings/><workflows/></importexportxml>", EntityItem.LogicalName);
+            string paramXml =
+                $" <importexportxml><entities><entity>{entityItem.LogicalName}</entity></entities><nodes/><securityroles/><settings/><workflows/></importexportxml>";
             objPlugin.WorkAsync(new WorkAsyncInfo
             {
-                Message = "Publishing Entity  " + EntityItem.LogicalName,
+                Message = "Publishing Entity  " + entityItem.LogicalName,
                 Work = (bw, ex) =>
                 {
-                    _serviceProxy.Execute(new PublishXmlRequest
+                    serviceProxy.Execute(new PublishXmlRequest
                     {
                         ParameterXml = paramXml
                     });
@@ -444,25 +452,15 @@ namespace ReplaceAttributeXmPlugin.Helper
                 {
                     if (ex.Error != null)
                     {
-                        MessageBox.Show(objPlugin.ParentForm, ex.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(objPlugin.ParentForm, ex.Error.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             });
         }
 
-        private static List<ClsViiewItemsChecked> ConvertListViweItems(List<ListViewItem> checkedItems)
+        private static List<ClsViiewItemsChecked> ConvertListViweItems(IEnumerable<ListViewItem> checkedItems)
         {
-            List<ClsViiewItemsChecked> checkedItemsProcess = new List<ClsViiewItemsChecked>();
-            foreach (var Item in checkedItems)
-            {
-                ClsViiewItemsChecked processItem = new ClsViiewItemsChecked
-                {
-                    checkedItem = Item,
-                    checkItemProcessed = false
-                };
-                checkedItemsProcess.Add(processItem);
-            }
-            return checkedItemsProcess;
+            return checkedItems.Select(item => new ClsViiewItemsChecked {CheckedItem = item, CheckItemProcessed = false}).ToList();
         }
     }
 }

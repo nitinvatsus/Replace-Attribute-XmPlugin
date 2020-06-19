@@ -33,7 +33,7 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FromUserView));
             this.ViewName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.CmdCheckAllViews = new System.Windows.Forms.Button();
-            this.listViewView = new System.Windows.Forms.ListView();
+            this.listViewViewUsers = new System.Windows.Forms.ListView();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.cmdCheckAllUsers = new System.Windows.Forms.Button();
@@ -71,30 +71,30 @@
             this.CmdCheckAllViews.UseVisualStyleBackColor = true;
             this.CmdCheckAllViews.Click += new System.EventHandler(this.CmdCheckAllViews_Click);
             // 
-            // listViewView
+            // listViewViewUsers
             // 
-            this.listViewView.CheckBoxes = true;
-            this.listViewView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.listViewViewUsers.CheckBoxes = true;
+            this.listViewViewUsers.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.ViewName});
-            this.listViewView.FullRowSelect = true;
-            this.listViewView.HideSelection = false;
-            this.listViewView.Location = new System.Drawing.Point(8, 64);
-            this.listViewView.Margin = new System.Windows.Forms.Padding(4);
-            this.listViewView.MultiSelect = false;
-            this.listViewView.Name = "listViewView";
-            this.listViewView.Size = new System.Drawing.Size(457, 484);
-            this.listViewView.Sorting = System.Windows.Forms.SortOrder.Descending;
-            this.listViewView.TabIndex = 10;
-            this.listViewView.Tag = "0";
-            this.listViewView.UseCompatibleStateImageBehavior = false;
-            this.listViewView.View = System.Windows.Forms.View.Details;
-            this.listViewView.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.ListViewView_ColumnClick);
-            this.listViewView.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.ListViewView_ItemChecked);
+            this.listViewViewUsers.FullRowSelect = true;
+            this.listViewViewUsers.HideSelection = false;
+            this.listViewViewUsers.Location = new System.Drawing.Point(8, 64);
+            this.listViewViewUsers.Margin = new System.Windows.Forms.Padding(4);
+            this.listViewViewUsers.MultiSelect = false;
+            this.listViewViewUsers.Name = "listViewViewUsers";
+            this.listViewViewUsers.Size = new System.Drawing.Size(457, 484);
+            this.listViewViewUsers.Sorting = System.Windows.Forms.SortOrder.Descending;
+            this.listViewViewUsers.TabIndex = 10;
+            this.listViewViewUsers.Tag = "0";
+            this.listViewViewUsers.UseCompatibleStateImageBehavior = false;
+            this.listViewViewUsers.View = System.Windows.Forms.View.Details;
+            this.listViewViewUsers.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.ListViewView_ColumnClick);
+            this.listViewViewUsers.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.ListViewView_ItemChecked);
             // 
             // groupBox1
             // 
             this.groupBox1.Controls.Add(this.CmdCheckAllViews);
-            this.groupBox1.Controls.Add(this.listViewView);
+            this.groupBox1.Controls.Add(this.listViewViewUsers);
             this.groupBox1.Location = new System.Drawing.Point(353, 36);
             this.groupBox1.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox1.Name = "groupBox1";
@@ -135,7 +135,7 @@
             this.TxtSearchUsersList.Location = new System.Drawing.Point(12, 78);
             this.TxtSearchUsersList.Margin = new System.Windows.Forms.Padding(7, 6, 7, 6);
             this.TxtSearchUsersList.Name = "TxtSearchUsersList";
-            this.TxtSearchUsersList.Size = new System.Drawing.Size(302, 23);
+            this.TxtSearchUsersList.Size = new System.Drawing.Size(302, 30);
             this.TxtSearchUsersList.TabIndex = 3;
             this.TxtSearchUsersList.TextChanged += new System.EventHandler(this.TxtSearchUsersList_TextChanged);
             // 
@@ -200,16 +200,16 @@
             this.tbReplaceSelectedDependency});
             this.toolStripMenu.Location = new System.Drawing.Point(0, 0);
             this.toolStripMenu.Name = "toolStripMenu";
-            this.toolStripMenu.Size = new System.Drawing.Size(835, 31);
+            this.toolStripMenu.Size = new System.Drawing.Size(1275, 34);
             this.toolStripMenu.TabIndex = 37;
             this.toolStripMenu.Text = "toolStrip1";
-            this.toolStripMenu.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.toolStripMenu_ItemClicked);
+            this.toolStripMenu.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.ToolStripMenu_ItemClicked);
             // 
             // tsbClose
             // 
             this.tsbClose.Image = ((System.Drawing.Image)(resources.GetObject("tsbClose.Image")));
             this.tsbClose.Name = "tsbClose";
-            this.tsbClose.Size = new System.Drawing.Size(110, 28);
+            this.tsbClose.Size = new System.Drawing.Size(153, 29);
             this.tsbClose.Text = "Close this tool";
             this.tsbClose.Click += new System.EventHandler(this.TsbClose_Click);
             // 
@@ -219,14 +219,14 @@
             this.tbLoadUserView.Image = global::ReplaceAttributeXmPlugin.Properties.Resources.cv_IconWeekListTeam32;
             this.tbLoadUserView.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tbLoadUserView.Name = "tbLoadUserView";
-            this.tbLoadUserView.Size = new System.Drawing.Size(115, 28);
+            this.tbLoadUserView.Size = new System.Drawing.Size(161, 29);
             this.tbLoadUserView.Text = "Load User View";
             this.tbLoadUserView.Click += new System.EventHandler(this.TbLoadUserView_Click);
             // 
             // tssSeparator1
             // 
             this.tssSeparator1.Name = "tssSeparator1";
-            this.tssSeparator1.Size = new System.Drawing.Size(6, 31);
+            this.tssSeparator1.Size = new System.Drawing.Size(6, 34);
             // 
             // tbDeleteSelectedDependency
             // 
@@ -234,7 +234,7 @@
             this.tbDeleteSelectedDependency.Image = ((System.Drawing.Image)(resources.GetObject("tbDeleteSelectedDependency.Image")));
             this.tbDeleteSelectedDependency.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tbDeleteSelectedDependency.Name = "tbDeleteSelectedDependency";
-            this.tbDeleteSelectedDependency.Size = new System.Drawing.Size(184, 28);
+            this.tbDeleteSelectedDependency.Size = new System.Drawing.Size(265, 29);
             this.tbDeleteSelectedDependency.Text = "Delete Selected Dependency";
             this.tbDeleteSelectedDependency.Click += new System.EventHandler(this.TbDeleteSelectedDependency_Click);
             // 
@@ -244,15 +244,15 @@
             this.tbReplaceSelectedDependency.Image = ((System.Drawing.Image)(resources.GetObject("tbReplaceSelectedDependency.Image")));
             this.tbReplaceSelectedDependency.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tbReplaceSelectedDependency.Name = "tbReplaceSelectedDependency";
-            this.tbReplaceSelectedDependency.Size = new System.Drawing.Size(192, 28);
+            this.tbReplaceSelectedDependency.Size = new System.Drawing.Size(275, 29);
             this.tbReplaceSelectedDependency.Text = "Replace Selected Dependency";
             this.tbReplaceSelectedDependency.Click += new System.EventHandler(this.TbReplaceSelectedDependency_Click);
             // 
             // FromUserView
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(835, 600);
+            this.ClientSize = new System.Drawing.Size(1275, 667);
             this.Controls.Add(this.toolStripMenu);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
@@ -279,7 +279,7 @@
         #endregion
         private System.Windows.Forms.ColumnHeader ViewName;
         private System.Windows.Forms.Button CmdCheckAllViews;
-        private System.Windows.Forms.ListView listViewView;
+        private System.Windows.Forms.ListView listViewViewUsers;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.GroupBox groupBox2;
         private System.Windows.Forms.Button cmdCheckAllUsers;
