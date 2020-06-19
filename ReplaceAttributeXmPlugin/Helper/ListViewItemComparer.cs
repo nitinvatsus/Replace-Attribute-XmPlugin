@@ -5,20 +5,14 @@ namespace ReplaceAttributeXmPlugin.Helper
 {
     internal class ListViewItemComparer : IComparer
     {
-        private readonly int col;
+        private readonly int _col;
 
-        private readonly SortOrder innerOrder;
-
-        public ListViewItemComparer()
-        {
-            this.col = 0;
-            this.innerOrder = SortOrder.Ascending;
-        }
+        private readonly SortOrder _innerOrder;
 
         public ListViewItemComparer(int column, SortOrder order)
         {
-            this.col = column;
-            this.innerOrder = order;
+            this._col = column;
+            this._innerOrder = order;
         }
 
         public int Compare(object x, object y)
@@ -26,13 +20,9 @@ namespace ReplaceAttributeXmPlugin.Helper
             return this.Compare((ListViewItem)x, (ListViewItem)y);
         }
 
-        public int Compare(ListViewItem x, ListViewItem y)
+        private int Compare(ListViewItem x, ListViewItem y)
         {
-            if (this.innerOrder == SortOrder.Ascending)
-            {
-                return string.Compare(x.SubItems[this.col].Text, y.SubItems[this.col].Text);
-            }
-            return string.Compare(y.SubItems[this.col].Text, x.SubItems[this.col].Text);
+            return this._innerOrder == SortOrder.Ascending ? string.CompareOrdinal(x.SubItems[this._col].Text, y.SubItems[this._col].Text) : string.CompareOrdinal(y.SubItems[this._col].Text, x.SubItems[this._col].Text);
         }
 
 

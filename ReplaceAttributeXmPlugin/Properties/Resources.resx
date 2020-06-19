@@ -126,6 +126,9 @@
 </value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="check_all" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\check-all.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="cv_IconWeekListTeam32" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\cv_IconWeekListTeam32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -410,5 +413,8 @@
         m8//o7JaMA2AAZhXQAAWaCUda8E2w2wHGbDnPA4DYF55/uIVGN97/BpsMwiD/A2yGYTxGgCSIA4n/wcA
         y1+WT137iIoAAAAASUVORK5CYII=
 </value>
+  </data>
+  <data name="uncheck_all" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\uncheck-all1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

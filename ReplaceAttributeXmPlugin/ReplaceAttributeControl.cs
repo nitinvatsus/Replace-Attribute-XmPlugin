@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Data;
 using System.Linq;
 using System.Windows.Forms;
 using XrmToolBox.Extensibility;
@@ -9,21 +8,27 @@ using Microsoft.Xrm.Sdk;
 using McTools.Xrm.Connection;
 using ReplaceAttributeXmPlugin.Helper;
 using Microsoft.Xrm.Sdk.Metadata;
+using Microsoft.Xrm.Tooling.Connector;
 
 namespace ReplaceAttributeXmPlugin
 {
     public partial class ReplaceAttributeControl : PluginControlBase
     {
-        private Settings mySettings;
-        private List<ListViewItem> _entitiesListViewItemsColl = null;
-        private List<ListViewItem> _AttributeListViewItemsColl = null;
-        private List<ListViewItem> _AttributeListViewItemsCollReplace = null;
-        private List<ListViewItem> _FormsListViewItemsColl = null;
-        private List<ListViewItem> _ViewListViewItemsColl = null;
-        private List<ListViewGroup> _FormListViewGroup = null;
-        private List<ListViewGroup> _ViewListViewGroup = null;
+        private List<ListViewItem> _entitiesListViewItemsColl;
+        private List<ListViewItem> _attributeListViewItemsColl;
+        private List<ListViewItem> _attributeListViewItemsCollReplace;
+        private List<ListViewItem> _formsListViewItemsColl;
+        private List<ListViewItem> _viewListViewItemsColl;
+        private List<ListViewGroup> _formListViewGroup;
+        private List<ListViewGroup> _viewListViewGroup;
 
+        private List<ListViewItem> _usersListViewItemsColl;
+        private List<ListViewGroup> _viewListUserViewGroup;
+        private List<ListViewItem> _viewListUserViewItemsColl;
         private EntityMetadata _attributesMetadata;
+        private bool _itemCheckedEvnt;
+
+        private IEnumerable<Entity> _systemViewOnUserEntity;
 
         #region Default Methods
         public ReplaceAttributeControl()
@@ -31,25 +36,11 @@ namespace ReplaceAttributeXmPlugin
             InitializeComponent();
         }
 
-        private void MyPluginControl_Load(object sender, EventArgs e)
-        {
-           
-        }
-
-        private void tsbClose_Click(object sender, EventArgs e)
+        private void TsbClose_Click(object sender, EventArgs e)
         {
             CloseTool();
         }
-        /// <summary>
-        /// This event occurs when the plugin is closed
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void MyPluginControl_OnCloseTool(object sender, EventArgs e)
-        {
-            // Before leaving, save the settings
-            SettingsManager.Instance.Save(GetType(), mySettings);
-        }
+       
 
         /// <summary>
         /// This event occurs when the connection has been updated in XrmToolBox
@@ -57,12 +48,14 @@ namespace ReplaceAttributeXmPlugin
         public override void UpdateConnection(IOrganizationService newService, ConnectionDetail detail, string actionName, object parameter)
         {
             base.UpdateConnection(newService, detail, actionName, parameter);
+            listViewEntities.Items.Clear();
+            listViewAttributes.Items.Clear();
+            listViewAttributesReplaced.Items.Clear();
+            listViewView.Items.Clear();
+            listViewForms.Items.Clear();
+            tbCheckAllSystemForms.Text = @"Check All Forms";
+            TbCheckAllSystemViews.Text = @"Check All Views";
 
-            if (mySettings != null && detail != null)
-            {
-                mySettings.LastUsedOrganizationWebappUrl = detail.WebApplicationUrl;
-                LogInfo("Connection has changed to: {0}", detail.WebApplicationUrl);
-            }
         }
         #endregion
 
@@ -76,13 +69,13 @@ namespace ReplaceAttributeXmPlugin
                 Message = "Loading entities...",
                 Work = (bw, e) =>
                 {
-                    e.Result = CRMAction.GetAllEntities(Service);
+                    e.Result = CrmAction.GetAllEntities(Service);
                 },
                 PostWorkCallBack = e =>
                 {
                     if (e.Error != null)
                     {
-                        MessageBox.Show(ParentForm, e.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(ParentForm, e.Error.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                     else
                     {
@@ -93,14 +86,14 @@ namespace ReplaceAttributeXmPlugin
                             LocalizedLabel localLabel = null;
                             if (entity.DisplayName.LocalizedLabels.Count > 0)
                             {
-                                localLabel = entity.DisplayName.LocalizedLabels.Where(l => l.LanguageCode == 1033).First();
+                                localLabel = entity.DisplayName.LocalizedLabels.First(l => l.LanguageCode == 1033);
                             }
 
                             var displayName = (localLabel != null) ? localLabel.Label : entity.SchemaName;
-                            var entityType = (entity.IsCustomEntity.Value) ? "Custom" : "System";
+                            var entityType = entity.IsCustomEntity != null && (entity.IsCustomEntity.Value) ? "Custom" : "System";
                             var lvItem = new ListViewItem()
                             {
-                                Name = "Display Name",
+                                Name = @"Display Name",
                                 ImageIndex = 0,
                                 StateImageIndex = 0,
                                 Text = displayName,
@@ -109,9 +102,9 @@ namespace ReplaceAttributeXmPlugin
                             };
                             lvItem.Tag = entity;
 
-                            var state = (entity.IsManaged.Value) ? "Managed" : "Unmanaged";
-                            lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, entity.LogicalName) { Tag = "Name", Name = "Name" });
-                            lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, state) { Tag = "State", Name = "State" });
+                            var state = entity.IsManaged != null && (entity.IsManaged.Value) ? "Managed" : "Unmanaged";
+                            lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, entity.LogicalName) { Tag = "Name", Name = @"Name" });
+                            lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, state) { Tag = "State", Name = @"State" });
                             _entitiesListViewItemsColl.Add(lvItem);
                         }
                         SortList(listViewEntities);
@@ -125,247 +118,235 @@ namespace ReplaceAttributeXmPlugin
         private void LoadAttributes()
         {
             TxtSearchAttributeList.Text = "";
-            if (listViewEntities.SelectedItems.Count > 0)
+            if (listViewEntities.SelectedItems.Count <= 0) return;
+            TxtSearchAttributeList.Text = "";
+            var item = listViewEntities.SelectedItems[0];
+            var entityName = item.SubItems[1].Text;
+            WorkAsync(new WorkAsyncInfo
             {
-                TxtSearchAttributeList.Text = "";
-                var Item = listViewEntities.SelectedItems[0];
-                var entityName = Item.SubItems[1].Text;
+                Message = "Loading Attributes...",
+                Work = (bw, e) =>
+                {
+                    e.Result = CrmAction.RetrieveEntityAttributeMeta(Service, entityName);
+                },
+                PostWorkCallBack = e =>
+                {
+                    if (e.Error != null)
+                    {
+                        MessageBox.Show(ParentForm, e.Error.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    else
+                    {
+                        _attributesMetadata = (EntityMetadata)e.Result;
+                        listViewAttributes.Items.Clear();
+                        _attributeListViewItemsColl = new List<ListViewItem>();
+                        foreach (var attribute in _attributesMetadata.Attributes)
+                        {
+                            if (attribute.AttributeType == AttributeTypeCode.Virtual)
+                                continue;
+
+                            LocalizedLabel localLabel = null;
+                            if (attribute.DisplayName.LocalizedLabels.Count > 0)
+                            {
+                                localLabel = attribute.DisplayName.LocalizedLabels.First(l => l.LanguageCode == 1033);
+                            }
+                            var displayName = (localLabel != null) ? localLabel.Label : attribute.SchemaName;
+                            var attributeType = (attribute.IsCustomizable.Value) ? "Custom" : "System";
+                            _attributeListViewItemsColl.Add(GetAttribuetListItem(attribute, displayName, attributeType));
+                        }
+                        SortList(listViewAttributes);
+                        listViewAttributes.Items.AddRange(_attributeListViewItemsColl.ToArray<ListViewItem>());
+                        TxtSearchAttributeList.Focus();
+                            
+                    }
+                }
+            });
+        }
+        private void LoadFormDependency()
+        {
+            if (listViewAttributes.SelectedItems.Count <= 0) return;
+            var entityItem = (EntityMetadata)listViewEntities.SelectedItems[0].Tag;
+            var objectTypeCode = entityItem.ObjectTypeCode;
+            var item = listViewAttributes.SelectedItems[0];
+            var subitem = item.SubItems[1].Text;
+            var attribute = _attributesMetadata.Attributes.FirstOrDefault(k => k.LogicalName == subitem);
+            if (attribute != null)
+            {
                 WorkAsync(new WorkAsyncInfo
                 {
-                    Message = "Loading Attributes...",
+                    Message = "Loading Forms Dependency...",
                     Work = (bw, e) =>
                     {
-                        e.Result = CRMAction.RetrieveEntityAttributeMeta(Service, entityName);
-                        //bw.ReportProgress()
+                        e.Result = CrmAction.GetAllSystemForms(Service, objectTypeCode, attribute.LogicalName);
                     },
-                    //ProgressChanged = (e) =>
-                    //{
-                    //    SetWorkingMessage("");
-                    //},
                     PostWorkCallBack = e =>
                     {
                         if (e.Error != null)
                         {
-                            MessageBox.Show(ParentForm, e.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            MessageBox.Show(ParentForm, e.Error.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                         else
                         {
-                            _attributesMetadata = (EntityMetadata)e.Result;
-                            listViewAttributes.Items.Clear();
-                            _AttributeListViewItemsColl = new List<ListViewItem>();
-                            foreach (AttributeMetadata attribute in _attributesMetadata.Attributes)
+                            var formEntity = (IEnumerable<Entity>)e.Result;
+                            listViewForms.Items.Clear();
+                            _formsListViewItemsColl = new List<ListViewItem>();
+                            _formListViewGroup = new List<ListViewGroup>();
+                            foreach (Entity objFormEntity in formEntity)
                             {
-                                if (attribute.AttributeType == AttributeTypeCode.Virtual)
+                                var layoutXml = (string)objFormEntity["formxml"];
+                                if (!XmlOperation.FindXmlControl(layoutXml, attribute.LogicalName, "control", "id"))
                                     continue;
-
-                                LocalizedLabel localLabel = null;
-                                if (attribute.DisplayName.LocalizedLabels.Count > 0)
+                                var displayName = "";
+                                if (objFormEntity.Attributes.Contains("name"))
                                 {
-                                    localLabel = attribute.DisplayName.LocalizedLabels.Where(l => l.LanguageCode == 1033).First();
+                                    displayName = (string)objFormEntity["name"];
                                 }
-                                var displayName = (localLabel != null) ? localLabel.Label : attribute.SchemaName;
-                                var attributeType = (attribute.IsCustomizable.Value) ? "Custom" : "System";
-                                _AttributeListViewItemsColl.Add(GetAttribuetListItem(attribute, displayName, attributeType));
+                                ListViewGroup group = null;
+                                if (objFormEntity.FormattedValues.Contains("type"))
+                                {
+                                    var formType = objFormEntity.FormattedValues["type"];
+                                    if (_formListViewGroup.All(o => o.Name != formType))
+                                    {
+                                        @group = new ListViewGroup(formType)
+                                        {
+                                            Name = formType,
+                                            Tag = "FormType"
+                                        };
+                                        _formListViewGroup.Add(@group);
+                                    }
+                                    else
+                                    {
+                                        @group = _formListViewGroup.FirstOrDefault(o => o.Name == formType);
+                                    }
+                                }
+                                var lvItem = new ListViewItem()
+                                {
+                                    Name = @"Name",
+                                    ImageIndex = 0,
+                                    StateImageIndex = 0,
+                                    Text = displayName,
+                                    Tag = objFormEntity,  // stash the template here so we can view details later
+                                    Group = @group
+                                };
+                                var state = ((bool)objFormEntity["ismanaged"]) ? "Managed" : "Unmanaged";
+                                lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, state) { Tag = "State", Name = @"State" });
+                                _formsListViewItemsColl.Add(lvItem);
                             }
-                            SortList(listViewAttributes);
-                            listViewAttributes.Items.AddRange(_AttributeListViewItemsColl.ToArray<ListViewItem>());
-                            TxtSearchAttributeList.Focus();
-                            
+                            listViewForms.Groups.AddRange(_formListViewGroup.ToArray<ListViewGroup>());
+                            listViewForms.Items.AddRange(_formsListViewItemsColl.ToArray<ListViewItem>());
+                            tbCheckAllSystemForms.Enabled = _formsListViewItemsColl.Count > 0;
+                            ExecuteMethod(LoadViewDependency);
                         }
                     }
                 });
             }
         }
-        private void LoadFormDependency()
-        {
-            if (listViewAttributes.SelectedItems.Count > 0)
-            {
-                var EntityItem = (EntityMetadata)listViewEntities.SelectedItems[0].Tag;
-                var ObjectTypeCode = EntityItem.ObjectTypeCode;
-                var Item = listViewAttributes.SelectedItems[0];
-                var subitem = Item.SubItems[1].Text;
-                var attribute = _attributesMetadata.Attributes.Where(k => k.LogicalName == subitem).FirstOrDefault();
-                if (attribute != null)
-                {
-                    WorkAsync(new WorkAsyncInfo
-                    {
-                        Message = "Loading Forms Dependency...",
-                        Work = (bw, e) =>
-                        {
-                            e.Result = CRMAction.GetAllSystemForms(Service, ObjectTypeCode, attribute.LogicalName);
-                        },
-                        PostWorkCallBack = e =>
-                        {
-                            if (e.Error != null)
-                            {
-                                MessageBox.Show(ParentForm, e.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            }
-                            else
-                            {
-                                var formEntity = (IEnumerable<Entity>)e.Result;
-                                listViewForms.Items.Clear();
-                                _FormsListViewItemsColl = new List<ListViewItem>();
-                                _FormListViewGroup = new List<ListViewGroup>();
-                                foreach (Entity objFormEntity in formEntity)
-                                {
-                                    string layoutXml = (string)objFormEntity["formxml"];
-                                    if (XmlOperation.FindXMLControl(layoutXml, attribute.LogicalName, "control", "id"))
-                                    {
-                                        var displayName = "";
-                                        if (objFormEntity.Attributes.Contains("name"))
-                                        {
-                                            displayName = (string)objFormEntity["name"];
-                                        }
-                                        ListViewGroup group = null;
-                                        if (objFormEntity.FormattedValues.Contains("type"))
-                                        {
-                                            string formType = (string)objFormEntity.FormattedValues["type"];
-                                            if (_FormListViewGroup.Where(o => o.Name == formType).Count() == 0)
-                                            {
-                                                group = new ListViewGroup(formType)
-                                                {
-                                                    Name = formType,
-                                                    Tag = "FormType"
-                                                };
-                                                _FormListViewGroup.Add(group);
-                                            }
-                                            else
-                                            {
-                                                group = _FormListViewGroup.Where(o => o.Name == formType).FirstOrDefault();
-                                            }
-                                        }
-                                        var lvItem = new ListViewItem()
-                                        {
-                                            Name = "Name",
-                                            ImageIndex = 0,
-                                            StateImageIndex = 0,
-                                            Text = displayName,
-                                            Tag = objFormEntity,  // stash the template here so we can view details later
-                                            Group = group
-                                        };
-                                        var state = ((bool)objFormEntity["ismanaged"]) ? "Managed" : "Unmanaged";
-                                        lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, state) { Tag = "State", Name = "State" });
-                                        _FormsListViewItemsColl.Add(lvItem);
-                                    }
-                                }
-                                listViewForms.Groups.AddRange(_FormListViewGroup.ToArray<ListViewGroup>());
-                                listViewForms.Items.AddRange(_FormsListViewItemsColl.ToArray<ListViewItem>());
-                                ExecuteMethod(LoadViewDependency);
-                            }
-                        }
-                    });
-                }
-            }
-        }
         private void LoadViewDependency()
         {
-            if (listViewAttributes.SelectedItems.Count > 0)
+            if (listViewAttributes.SelectedItems.Count <= 0) return;
+            var entityItem = (EntityMetadata)listViewEntities.SelectedItems[0].Tag;
+            var objectTypeCode = entityItem.ObjectTypeCode;
+            var item = listViewAttributes.SelectedItems[0];
+            var subitem = item.SubItems[1].Text;
+            var attribute = _attributesMetadata.Attributes.FirstOrDefault(k => k.LogicalName == subitem);
+            if (attribute != null)
             {
-                var EntityItem = (EntityMetadata)listViewEntities.SelectedItems[0].Tag;
-                var ObjectTypeCode = EntityItem.ObjectTypeCode;
-                var Item = listViewAttributes.SelectedItems[0];
-                var subitem = Item.SubItems[1].Text;
-                var attribute = _attributesMetadata.Attributes.Where(k => k.LogicalName == subitem).FirstOrDefault();
-                if (attribute != null)
+                WorkAsync(new WorkAsyncInfo
                 {
-                    WorkAsync(new WorkAsyncInfo
+                    Message = "Loading View Dependency...",
+                    Work = (bw, e) =>
                     {
-                        Message = "Loading View Dependency...",
-                        Work = (bw, e) =>
+                        e.Result = CrmAction.GetAllSystemViews(Service, objectTypeCode, attribute.LogicalName);
+                    },
+                    PostWorkCallBack = e =>
+                    {
+                        if (e.Error != null)
                         {
-                            e.Result = CRMAction.GetAllSystemViews(Service, ObjectTypeCode, attribute.LogicalName);
-                        },
-                        PostWorkCallBack = e =>
+                            MessageBox.Show(ParentForm, e.Error.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                        else
                         {
-                            if (e.Error != null)
-                            {
-                                MessageBox.Show(ParentForm, e.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            }
-                            else
-                            {
-                                var viewEntities = (IEnumerable<Entity>)e.Result;
-                                listViewView.Items.Clear();
-                                _ViewListViewItemsColl = new List<ListViewItem>();
-                                _ViewListViewGroup = new List<ListViewGroup>();
-                                string attributeName = attribute.LogicalName;
+                            var viewEntities = (IEnumerable<Entity>)e.Result;
+                            listViewView.Items.Clear();
+                            _viewListViewItemsColl = new List<ListViewItem>();
+                            _viewListViewGroup = new List<ListViewGroup>();
+                            var attributeName = attribute.LogicalName;
 
-                                foreach (Entity objViewEntity in viewEntities)
+                            foreach (var objViewEntity in viewEntities)
+                            {
+                                var layoutXml = (string)objViewEntity["layoutxml"];
+                                var isFound = XmlOperation.FindXmlControl(layoutXml, attributeName, "cell", "name");
+                                if (!isFound)
                                 {
-                                    string layoutXml = (string)objViewEntity["layoutxml"];
-                                    bool IsFound = XmlOperation.FindXMLControl(layoutXml, attributeName, "cell", "name");
-                                    if (!IsFound)
-                                    {
-                                        layoutXml = (string)objViewEntity["fetchxml"];
-                                        IsFound = XmlOperation.FindXMLControl(layoutXml, attributeName, "attribute", "name");
-                                        if (!IsFound)
-                                            IsFound = XmlOperation.FindXMLControl(layoutXml, attributeName, "condition", "attribute");
-                                    }
-                                    if (IsFound)
-                                    {
-                                        var displayName = "";
-                                        if (objViewEntity.Attributes.Contains("name"))
-                                        {
-                                            displayName = (string)objViewEntity["name"];
-                                        }
-                                        ListViewGroup group = null;
-                                        if (objViewEntity.Attributes.Contains("layoutxml"))
-                                        {
-                                            string columnXml = (string)objViewEntity.Attributes["layoutxml"];
-                                            if (columnXml.IndexOf(attributeName) >= 0)
-                                            {
-                                                if (_ViewListViewGroup.Where(o => o.Name == "LayoutXML").Count() == 0)
-                                                {
-                                                    group = new ListViewGroup("Layout XML")
-                                                    {
-                                                        Name = "LayoutXML",
-                                                        Tag = "LayoutXML"
-                                                    };
-                                                    _ViewListViewGroup.Add(group);
-                                                }
-                                                else
-                                                {
-                                                    group = _ViewListViewGroup.Where(o => o.Name == "LayoutXML").FirstOrDefault();
-                                                }
-                                            }
-                                            else
-                                            {
-                                                if (_ViewListViewGroup.Where(o => o.Name == "FetchXML").Count() == 0)
-                                                {
-                                                    group = new ListViewGroup("Fetch XML")
-                                                    {
-                                                        Name = "FetchXML",
-                                                        Tag = "FetchXML"
-                                                    };
-                                                    _ViewListViewGroup.Add(group);
-                                                }
-                                                else
-                                                {
-                                                    group = _ViewListViewGroup.Where(o => o.Name == "FetchXML").FirstOrDefault();
-                                                }
-                                            }
-                                        }
-                                        var lvItem = new ListViewItem()
-                                        {
-                                            Name = "Name",
-                                            ImageIndex = 0,
-                                            StateImageIndex = 0,
-                                            Text = displayName,
-                                            Tag = objViewEntity,  // stash the template here so we can view details later
-                                            Group = group
-                                        };
-                                        var state = ((bool)objViewEntity["ismanaged"]) ? "Managed" : "Unmanaged";
-                                        lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, state) { Tag = "State", Name = "State" });
-                                        _ViewListViewItemsColl.Add(lvItem);
-                                    }
+                                    layoutXml = (string)objViewEntity["fetchxml"];
+                                    isFound = XmlOperation.FindXmlControl(layoutXml, attributeName, "attribute", "name");
+                                    if (!isFound)
+                                        isFound = XmlOperation.FindXmlControl(layoutXml, attributeName, "condition", "attribute");
                                 }
 
-                                listViewView.Groups.AddRange(_ViewListViewGroup.ToArray<ListViewGroup>());
-                                listViewView.Items.AddRange(_ViewListViewItemsColl.ToArray<ListViewItem>());
-
+                                if (!isFound) continue;
+                                var displayName = "";
+                                if (objViewEntity.Attributes.Contains("name"))
+                                {
+                                    displayName = (string)objViewEntity["name"];
+                                }
+                                ListViewGroup group = null;
+                                if (objViewEntity.Attributes.Contains("layoutxml"))
+                                {
+                                    var columnXml = (string)objViewEntity.Attributes["layoutxml"];
+                                    if (columnXml.IndexOf(attributeName, StringComparison.Ordinal) >= 0)
+                                    {
+                                        if (_viewListViewGroup.All(o => o.Name != "LayoutXML"))
+                                        {
+                                            group = new ListViewGroup("Layout XML")
+                                            {
+                                                Name = "LayoutXML",
+                                                Tag = "LayoutXML"
+                                            };
+                                            _viewListViewGroup.Add(group);
+                                        }
+                                        else
+                                        {
+                                            group = _viewListViewGroup.FirstOrDefault(o => o.Name == "LayoutXML");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (_viewListViewGroup.All(o => o.Name != "FetchXML"))
+                                        {
+                                            group = new ListViewGroup("Fetch XML")
+                                            {
+                                                Name = "FetchXML",
+                                                Tag = "FetchXML"
+                                            };
+                                            _viewListViewGroup.Add(group);
+                                        }
+                                        else
+                                        {
+                                            group = _viewListViewGroup.FirstOrDefault(o => o.Name == "FetchXML");
+                                        }
+                                    }
+                                }
+                                var lvItem = new ListViewItem()
+                                {
+                                    Name = @"Name",
+                                    ImageIndex = 0,
+                                    StateImageIndex = 0,
+                                    Text = displayName,
+                                    Tag = objViewEntity,  // stash the template here so we can view details later
+                                    Group = group
+                                };
+                                var state = ((bool)objViewEntity["ismanaged"]) ? "Managed" : "Unmanaged";
+                                lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, state) { Tag = "State", Name = @"State" });
+                                _viewListViewItemsColl.Add(lvItem);
                             }
+                            TbCheckAllSystemViews.Enabled = _viewListViewItemsColl.Count > 0;
+                            listViewView.Groups.AddRange(_viewListViewGroup.ToArray<ListViewGroup>());
+                            listViewView.Items.AddRange(_viewListViewItemsColl.ToArray<ListViewItem>());
+
                         }
-                    });
-                }
+                    }
+                });
             }
         }
         
@@ -373,7 +354,7 @@ namespace ReplaceAttributeXmPlugin
         {
             var lvItem = new ListViewItem()
             {
-                Name = "Display Name",
+                Name = @"Display Name",
                 ImageIndex = 0,
                 StateImageIndex = 0,
                 Text = displayName,
@@ -382,20 +363,22 @@ namespace ReplaceAttributeXmPlugin
             };
             lvItem.Tag = attribute;
 
-            var state = (attribute.IsManaged.Value) ? "Managed" : "Unmanaged";
-            lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, attribute.LogicalName) { Tag = "Name", Name = "Name" });
-            lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, attribute.AttributeType.Value.ToString()) { Tag = "Type", Name = "Type" });
-            lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, state) { Tag = "State", Name = "State" });
+            var state = attribute.IsManaged != null && (attribute.IsManaged.Value) ? "Managed" : "Unmanaged";
+            lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, attribute.LogicalName) { Tag = "Name", Name = @"Name" });
+            if (attribute.AttributeType != null)
+                lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, attribute.AttributeType.Value.ToString())
+                    {Tag = "Type", Name = @"Type"});
+            lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, state) { Tag = "State", Name = @"State" });
             return lvItem;
         }
        
         #region Default Sorting in ListView Load
-        private void SortList(ListView objListView)
+        private static void SortList(ListView objListView)
         {
             int.TryParse(objListView.Tag.ToString(), out int currCol);
             SortList(currCol, objListView);
         }
-        private void SortList(int column, ListView objListView)
+        private static void SortList(int column, ListView objListView)
         {
             var currSortCol = int.Parse(objListView.Tag.ToString());
             objListView.SuspendLayout();
@@ -443,82 +426,103 @@ namespace ReplaceAttributeXmPlugin
         }
         private void ListViewAttributes_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (listViewAttributes.SelectedItems.Count > 0)
+            if (listViewAttributes.SelectedItems.Count <= 0) return;
+            tbLoadDependency.Enabled = true;
+            tabUserView.Visible = true;
+
+
+            //TbLoadUserView.Enabled = true;
+
+            TxtSearchReplaceAttributeList.Text = "";
+            tbCheckAllSystemForms.Text = @"Check All Forms";
+            TbCheckAllSystemViews.Text = @"Check All Views";
+            TbCheckAllUserViews.Text = @"Check All User Views";
+
+           
+            tbCheckAllSystemForms.Enabled = false;
+            TbCheckAllSystemViews.Enabled = false;
+            TbCheckAllUserViews.Enabled = false;
+
+            listViewAttributesReplaced.Items.Clear();
+            listViewForms.Items.Clear();
+            listViewView.Items.Clear();
+            listViewViewUsers.Items.Clear();
+
+            tbDeleteSelectedDependency.Enabled = false;
+            tbReplaceSelectedDependency.Enabled = false;
+            tbDeleteSelectedUserDependency.Enabled = false;
+            tbReplaceSelectedUserDependency.Enabled = false;
+
+
+            var item = listViewAttributes.SelectedItems[0];
+            var attributeCurrent = (AttributeMetadata)item.Tag;
+            _attributeListViewItemsCollReplace = new List<ListViewItem>();
+            var typeGroups = new List<ListViewGroup>();
+            var isGroupAdd = false;
+
+            foreach (var attribute in _attributesMetadata.Attributes)
             {
-                tbLoadDependency.Enabled = true;
-                TxtSearchReplaceAttributeList.Text = "";
-                listViewAttributesReplaced.Items.Clear();
-                var Item = listViewAttributes.SelectedItems[0];
-                var attributeCurrent = (AttributeMetadata)Item.Tag;
-                _AttributeListViewItemsCollReplace = new List<ListViewItem>();
-                List<ListViewGroup> typeGroups = new List<ListViewGroup>();
-                bool isGroupAdd = false;
+                if (attribute.AttributeType == AttributeTypeCode.Virtual)
+                    continue;
 
-                foreach (var attribute in _attributesMetadata.Attributes)
+                LocalizedLabel localLabel = null;
+                if (attribute.DisplayName.LocalizedLabels.Count > 0)
                 {
-                    LocalizedLabel localLabel = null;
-                    if (attribute.DisplayName.LocalizedLabels.Count > 0)
-                    {
-                        localLabel = attribute.DisplayName.LocalizedLabels.Where(l => l.LanguageCode == 1033).First();
-                    }
-
-                    var displayName = (localLabel != null) ? localLabel.Label : attribute.SchemaName;
-                    var attributeType = (attribute.IsCustomizable.Value) ? "Custom" : "System";
-                    ListViewGroup group = new ListViewGroup(attribute.AttributeTypeName.Value)
-                    {
-                        Name = attribute.AttributeTypeName.Value,
-                        Tag = "AttrType"
-                    };
-                    if (typeGroups.Count > 0)
-                    {
-                        if (!typeGroups.Contains(group))
-                        {
-                            typeGroups.Add(group);
-                        }
-                    }
-                    else
-                    {
-                        typeGroups.Add(group);
-                    }
-
-                    var lvItem = new ListViewItem()
-                    {
-                        Name = "Display Name",
-                        ImageIndex = 0,
-                        StateImageIndex = 0,
-                        Text = displayName,
-                        Tag = attribute,  // stash the template here so we can view details later
-                        Group = typeGroups.Where(k => k.Name == attribute.AttributeTypeName.Value).FirstOrDefault()
-                    };
-
-                    lvItem.Tag = attribute;
-
-                    var state = (attribute.IsManaged.Value) ? "Managed" : "Unmanaged";
-                    lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, attribute.LogicalName) { Tag = "Name", Name = "Name" });
-                    lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, state) { Tag = "State", Name = "State" });
-                    if (attribute.AttributeTypeName.Value == attributeCurrent.AttributeTypeName.Value)
-                    {
-                        if (!isGroupAdd)
-                        {
-                            listViewAttributesReplaced.Groups.Add(group);
-                            isGroupAdd = true;
-                        }
-                        lvItem.BackColor = Color.GreenYellow;
-                    }
-                    if (lvItem.SubItems[1].Text != attributeCurrent.LogicalName)
-                        _AttributeListViewItemsCollReplace.Add(lvItem);
+                    localLabel = attribute.DisplayName.LocalizedLabels.First(l => l.LanguageCode == 1033);
                 }
-                SortList(listViewAttributesReplaced);
 
-                foreach (var group in typeGroups)
+                var displayName = (localLabel != null) ? localLabel.Label : attribute.SchemaName;
+                var group = new ListViewGroup(attribute.AttributeTypeName.Value)
                 {
-                    if (group.Name != attributeCurrent.AttributeTypeName.Value)
+                    Name = attribute.AttributeTypeName.Value,
+                    Tag = "AttrType"
+                };
+                if (typeGroups.Count > 0)
+                {
+                    if (!typeGroups.Contains(@group))
                     {
-                        listViewAttributesReplaced.Groups.Add(group);
+                        typeGroups.Add(@group);
                     }
                 }
-                listViewAttributesReplaced.Items.AddRange(_AttributeListViewItemsCollReplace.ToArray<ListViewItem>());
+                else
+                {
+                    typeGroups.Add(@group);
+                }
+
+                var lvItem = new ListViewItem()
+                {
+                    Name = @"Display Name",
+                    ImageIndex = 0,
+                    StateImageIndex = 0,
+                    Text = displayName,
+                    Tag = attribute,  // stash the template here so we can view details later
+                    Group = typeGroups.FirstOrDefault(k => k.Name == attribute.AttributeTypeName.Value)
+                };
+
+                lvItem.Tag = attribute;
+
+                var state = attribute.IsManaged != null && (attribute.IsManaged.Value) ? "Managed" : "Unmanaged";
+                lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, attribute.LogicalName) { Tag = "Name", Name = @"Name" });
+                lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, state) { Tag = "State", Name = @"State" });
+                if (attribute.AttributeTypeName.Value == attributeCurrent.AttributeTypeName.Value)
+                {
+                    if (!isGroupAdd)
+                    {
+                        listViewAttributesReplaced.Groups.Add(@group);
+                        isGroupAdd = true;
+                    }
+                    lvItem.BackColor = Color.GreenYellow;
+                }
+                if (lvItem.SubItems[1].Text != attributeCurrent.LogicalName)
+                    _attributeListViewItemsCollReplace.Add(lvItem);
             }
+            SortList(listViewAttributesReplaced);
+
+            foreach (var group in typeGroups.Where(group => @group.Name != attributeCurrent.AttributeTypeName.Value))
+            {
+                listViewAttributesReplaced.Groups.Add(@group);
+            }
+            listViewAttributesReplaced.Items.AddRange(_attributeListViewItemsCollReplace.ToArray<ListViewItem>());
         }
         private void TbLoadDependency_Click(object sender, EventArgs e)
         {
@@ -532,7 +536,7 @@ namespace ReplaceAttributeXmPlugin
         #region Search in List View By Text Changed
         private void TxtSearchAttributeList_TextChanged(object sender, EventArgs e)
         {
-            var searchList = _AttributeListViewItemsColl.Where(l => l.SubItems[0].Text.ToUpper().Contains(TxtSearchAttributeList.Text.ToUpper()));
+            var searchList = _attributeListViewItemsColl.Where(l => l.SubItems[0].Text.ToUpper().Contains(TxtSearchAttributeList.Text.ToUpper()));
             listViewAttributes.Items.Clear();
             listViewAttributes.Items.AddRange(searchList.ToArray());
         }
@@ -544,69 +548,28 @@ namespace ReplaceAttributeXmPlugin
         }
         private void TxtSearchReplaceAttributeList_TextChanged(object sender, EventArgs e)
         {
-            var searchList = _AttributeListViewItemsCollReplace.Where(l => l.SubItems[0].Text.ToUpper().Contains(TxtSearchReplaceAttributeList.Text.ToUpper()));
+            var searchList = _attributeListViewItemsCollReplace.Where(l => l.SubItems[0].Text.ToUpper().Contains(TxtSearchReplaceAttributeList.Text.ToUpper()));
             listViewAttributesReplaced.Items.Clear();
             listViewAttributesReplaced.Items.AddRange(searchList.ToArray());
         }
         #endregion
 
-        #region Select All Options
-        private void CmdCheckAllForms_Click(object sender, EventArgs e)
-        {
-            if (CmdCheckAllForms.Text == "Check All")
-            {
-                foreach (ListViewItem item in listViewForms.Items)
-                {
-                    item.Checked = true;
-                }
-                CmdCheckAllForms.Text = "Uncheck All";
-            }
-            else
-            {
-                foreach (ListViewItem item in listViewForms.Items)
-                {
-                    item.Checked = false;
-                }
-                CmdCheckAllForms.Text = "Check All";
-            }
-        }
-
-        private void CmdCheckAllViews_Click(object sender, EventArgs e)
-        {
-            if (CmdCheckAllViews.Text == "Check All")
-            {
-                foreach (ListViewItem item in listViewView.Items)
-                {
-                    item.Checked = true;
-                }
-                CmdCheckAllViews.Text = "Uncheck All";
-            }
-            else
-            {
-                foreach (ListViewItem item in listViewView.Items)
-                {
-                    item.Checked = false;
-                }
-                CmdCheckAllViews.Text = "Check All";
-            }
-        }
-        #endregion
+        
 
         #region Delete CRM Dependency from CRM SystemForm and SystemView
         
         private void TbDeleteSelectedDependency_Click(object sender, EventArgs e)
         {
-            if (listViewEntities.SelectedItems.Count > 0)
+            if (_attributesMetadata?.Attributes != null && _attributesMetadata.Attributes.Any())
             {
-                var EntityItem = (EntityMetadata)listViewEntities.SelectedItems[0].Tag;
                 if (listViewAttributes.SelectedItems.Count > 0)
                 {
                     var lstItem = listViewAttributes.SelectedItems[0];
                     var subitem = lstItem.SubItems[1].Text;
-                    XmlRequest objRequest = new XmlRequest()
+                    var objRequest = new XmlRequest()
                     {
                         IsUserView = false,
-                        Objentity = EntityItem,
+                        Objentity = _attributesMetadata,
                         ObjPlugin = this,
                         ServiceProxy = Service,
                         OldAttributeName = subitem,
@@ -622,27 +585,27 @@ namespace ReplaceAttributeXmPlugin
                         objRequest.CheckedFromItems = listViewForms.CheckedItems.Cast<ListViewItem>().ToList();
                         objRequest.CheckedItemsViews = listViewView.CheckedItems.Cast<ListViewItem>().ToList();
                         objRequest.IsViewDependency = true;
-                        XmlOperation.DeleteFormDependency(objRequest);
+                        XmlOperation.DeleteFormDependency(objRequest, null);
                     }
                     else if (listViewForms.CheckedItems.Count > 0)
                     {
                         objRequest.CheckedFromItems = listViewForms.CheckedItems.Cast<ListViewItem>().ToList();
-                        XmlOperation.DeleteFormDependency(objRequest);
+                        XmlOperation.DeleteFormDependency(objRequest, null);
                     }
                     else if (listViewView.CheckedItems.Count > 0)
                     {
                         objRequest.CheckedItemsViews = listViewView.CheckedItems.Cast<ListViewItem>().ToList();
-                        XmlOperation.DeleteViewDependency(objRequest);
+                        XmlOperation.DeleteViewDependency(objRequest, null);
                     }
                 }
                 else
                 {
-                    MessageBox.Show("Please Select Attribute First");
+                    MessageBox.Show(@"Please Select Attribute First");
                 }
             }
             else
             {
-                MessageBox.Show("Please Select Entity First");
+                MessageBox.Show(@"Attribute Metadata not found", @"Information Missing", MessageBoxButtons.OK);
             }
         }
         #endregion
@@ -651,21 +614,21 @@ namespace ReplaceAttributeXmPlugin
         private void EnableDependencyOperation()
         {
           
-            if (listViewForms.Items.Cast<ListViewItem>().Where(k => k.Checked == true).Count() > 0)
+            if (listViewForms.Items.Cast<ListViewItem>().Any(k => k.Checked))
                 tbDeleteSelectedDependency.Enabled = true;
-            else if (listViewView.Items.Cast<ListViewItem>().Where(k => k.Checked == true).Count() > 0)
+            else if (listViewView.Items.Cast<ListViewItem>().Any(k => k.Checked))
                 tbDeleteSelectedDependency.Enabled = true;
             else
             {
                 tbReplaceSelectedDependency.Enabled = false;
+                tbReplaceSelectedUserDependency.Enabled = false;
                 tbDeleteSelectedDependency.Enabled = false;
             }
-           
-            
-            if (tbDeleteSelectedDependency.Enabled)
+            if (!tbDeleteSelectedDependency.Enabled) return;
+            if (listViewAttributesReplaced.SelectedItems.Count > 0)
             {
-                if (listViewAttributesReplaced.SelectedItems.Count > 0)
-                    tbReplaceSelectedDependency.Enabled = true;
+                tbReplaceSelectedDependency.Enabled = true;
+                tbReplaceSelectedUserDependency.Enabled = true;
             }
         }
         private void ListViewForms_ItemChecked(object sender, ItemCheckedEventArgs e)
@@ -684,9 +647,8 @@ namespace ReplaceAttributeXmPlugin
 
         private void TbReplaceSelectedDependency_Click(object sender, EventArgs e)
         {
-            if (listViewEntities.SelectedItems.Count > 0)
+            if (_attributesMetadata?.Attributes != null && _attributesMetadata.Attributes.Any())
             {
-                var EntityItem = (EntityMetadata)listViewEntities.SelectedItems[0].Tag;
                 if (listViewAttributesReplaced.SelectedItems.Count > 0)
                 {
                     if (listViewAttributes.SelectedItems.Count > 0)
@@ -695,12 +657,12 @@ namespace ReplaceAttributeXmPlugin
                         var subitem = lstItem.SubItems[1].Text;
                         var lstItemReplace = listViewAttributesReplaced.SelectedItems[0];
                         var subitemReplace = lstItemReplace.SubItems[1].Text;
-                        AttributeMetadata objAttData = (AttributeMetadata)lstItemReplace.Tag;
+                        var objAttData = (AttributeMetadata)lstItemReplace.Tag;
 
-                        XmlRequest objRequest = new XmlRequest()
+                        var objRequest = new XmlRequest
                         {
                             IsUserView = false,
-                            Objentity = EntityItem,
+                            Objentity = _attributesMetadata,
                             ObjPlugin = this,
                             ServiceProxy = Service,
                             OldAttributeName = subitem,
@@ -716,40 +678,562 @@ namespace ReplaceAttributeXmPlugin
                             objRequest.CheckedFromItems = listViewForms.CheckedItems.Cast<ListViewItem>().ToList();
                             objRequest.CheckedItemsViews = listViewView.CheckedItems.Cast<ListViewItem>().ToList();
                             objRequest.IsViewDependency = true;
-                            XmlOperation.ReplaceFormDependency(objRequest);
+                            XmlOperation.ReplaceFormDependency(objRequest, null);
                         }
                         else if (listViewForms.CheckedItems.Count > 0)
                         {
                             objRequest.CheckedFromItems = listViewForms.CheckedItems.Cast<ListViewItem>().ToList();
-                            XmlOperation.ReplaceFormDependency(objRequest);
+                            XmlOperation.ReplaceFormDependency(objRequest, null);
                         }
                         else if (listViewView.CheckedItems.Count > 0)
                         {
                             objRequest.CheckedItemsViews = listViewView.CheckedItems.Cast<ListViewItem>().ToList();
-                            XmlOperation.ReplaceViewDependency(objRequest);
+                            XmlOperation.ReplaceViewDependency(objRequest, null);
                         }
                     }
                     else
                     {
-                        MessageBox.Show("Please Select Attribute First");
+                        MessageBox.Show(@"Please Select Attribute First");
                     }
                 }
                 else
                 {
-                    MessageBox.Show("Please Select Replace Attribute First");
+                    MessageBox.Show(@"Please Select Replace Attribute First");
                 }
             }
             else
             {
-                MessageBox.Show("Please Select Entity First");
+                MessageBox.Show(@"Attribute Metadata not found", @"Information Missing", MessageBoxButtons.OK);
             }
         }
 
-        private void toolStripButton2_Click(object sender, EventArgs e)
+        private UserViewRequest GetUserViewRequest()
         {
-           
+            UserViewRequest userViewRequest = null;
+            if (_attributesMetadata?.Attributes != null && _attributesMetadata.Attributes.Any())
+            {
+                if (listViewAttributes.SelectedItems.Count > 0)
+                {
+                    var item = listViewAttributes.SelectedItems[0];
+                    var attributeCurrent = (AttributeMetadata)item.Tag;
+                    userViewRequest = new UserViewRequest()
+                    {
+                        AttributeSelected = attributeCurrent.LogicalName,
+                        OldAttributeDisplayName = item.Text,
+                        Plugin = this,
+                        ServiceProxy = Service,
+                        ObjEntity = _attributesMetadata
+                    };
+                    if (listViewAttributesReplaced.SelectedItems.Count <= 0) return userViewRequest;
+                    var itemReplace = listViewAttributesReplaced.SelectedItems[0];
+                    var attributeCurrentReplace = (AttributeMetadata)itemReplace.Tag;
+                    userViewRequest.NewAttributeDisplayName = itemReplace.Text;
+                    userViewRequest.NewAttributeName = attributeCurrentReplace.LogicalName;
+                }
+                else
+                {
+                    MessageBox.Show(@"Please Select Attribute First");
+                }
+            }
+            else
+            {
+                MessageBox.Show(@"Attribute Metadata not found", @"Information Missing", MessageBoxButtons.OK);
+            }
+
+            return userViewRequest;
         }
 
-        
+       
+
+        private void ReplaceAttributeControl_Resize(object sender, EventArgs e)
+        {
+            groupBox1.Width =  Width - (groupBox2.Width + groupBox3.Width+groupBox6.Width + 20);
+            groupBox4.Height = Convert.ToInt32(Height / 2.0 - 70);
+            groupBox5.Height = Convert.ToInt32(Height / 2.0 -5);
+        }
+
+        private void TbCheckAllSystemForms_Click(object sender, EventArgs e)
+        {
+            if (tbCheckAllSystemForms.Text == @"Check All Forms")
+            {
+                CheckUnCheckToggle(tbCheckAllSystemForms, listViewForms, true);
+                tbCheckAllSystemForms.Text = @"Uncheck All Forms";
+            }
+            else
+            {
+                CheckUnCheckToggle(tbCheckAllSystemForms, listViewForms, false);
+                tbCheckAllSystemForms.Text = @"Check All Forms";
+            }
+        }
+
+        private void TbCheckAllSystemViews_Click(object sender, EventArgs e)
+        {
+            if (TbCheckAllSystemViews.Text == @"Check All Views")
+            {
+                CheckUnCheckToggle(TbCheckAllSystemViews, listViewView, true);
+                TbCheckAllSystemViews.Text = @"Uncheck All Views";
+            }
+            else
+            {
+                CheckUnCheckToggle(TbCheckAllSystemViews, listViewView, false);
+                TbCheckAllSystemViews.Text = @"Check All Views";
+            }
+        }
+
+        private void TbCheckAllSystemUsers_Click(object sender, EventArgs e)
+        {
+            if (TbCheckAllSystemUsers.Text == @"Check All Users")
+            {
+                CheckUnCheckToggle(TbCheckAllSystemUsers, listViewSystemUsers, true);
+                if (listViewEntities.SelectedItems.Count > 0 && listViewAttributes.SelectedItems.Count > 0)
+                    TbLoadUserView.Enabled = true;
+                TbCheckAllSystemUsers.Text = @"Unheck All Users";
+            }
+            else
+            {
+                CheckUnCheckToggle(TbCheckAllSystemUsers, listViewSystemUsers, false);
+                TbLoadUserView.Enabled = false;
+                TbCheckAllSystemUsers.Text = @"Check All Users";
+            }
+        }
+
+
+        private void LoadSystemUser()
+        {
+            TxtSearchUsersList.Text = "";
+            WorkAsync(new WorkAsyncInfo
+            {
+                Message = "Loading System Users...",
+                Work = (bw, e) =>
+                {
+                    e.Result = CrmAction.GetAllSystemUsers(Service);
+                },
+                PostWorkCallBack = e =>
+                {
+                    if (e.Error != null)
+                    {
+                        MessageBox.Show(ParentForm, e.Error.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    else
+                    {
+                        listViewSystemUsers.Items.Clear();
+                        var userEntities = (IEnumerable<Entity>)e.Result;
+                        _usersListViewItemsColl = new List<ListViewItem>();
+                        foreach (var objUserEntity in userEntities)
+                        {
+                            var displayName = "";
+                            if (objUserEntity.Attributes.Contains("fullname"))
+                            {
+                                displayName = (string)objUserEntity["fullname"];
+                            }
+                            var lvItem = new ListViewItem()
+                            {
+                                Name = @"Name",
+                                ImageIndex = 0,
+                                StateImageIndex = 0,
+                                Text = displayName,
+                                Tag = objUserEntity
+                            };
+
+                            if (objUserEntity.Attributes.Contains("domainname"))
+                            {
+                                lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, (string)objUserEntity["domainname"]) { Tag = "domainname", Name = @"domainname" });
+                            }
+                            if (objUserEntity.Attributes.Contains("islicensed"))
+                            {
+                                var state = ((bool)objUserEntity["islicensed"]) ? "Licensed" : "Unlicensed";
+                                lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, state) { Tag = "islicensed", Name = @"islicensed" });
+                            }
+                            _usersListViewItemsColl.Add(lvItem);
+                        }
+                        listViewSystemUsers.Items.AddRange(_usersListViewItemsColl.ToArray<ListViewItem>());
+
+                        SortList(listViewSystemUsers);
+                        TbCheckAllSystemUsers.Visible = true;
+                        TbCheckAllSystemUsers.Enabled = true;
+                        TbLoadUserView.Visible = true;
+                        listViewSystemUsers.ResumeLayout();
+                        TxtSearchUsersList.Focus();
+                    }
+                }
+            });
+        }
+
+        private void LoadSystemUser(string fetchXml)
+        {
+            TxtSearchUsersList.Text = "";
+            WorkAsync(new WorkAsyncInfo
+            {
+                Message = "Loading System Users...",
+                Work = (bw, e) =>
+                {
+                    e.Result = CrmAction.GetAllSystemUsers(Service, fetchXml);
+                },
+                PostWorkCallBack = e =>
+                {
+                    if (e.Error != null)
+                    {
+                        MessageBox.Show(ParentForm, e.Error.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    else
+                    {
+                        listViewSystemUsers.Items.Clear();
+                        var userEntities = (IEnumerable<Entity>)e.Result;
+                        _usersListViewItemsColl = new List<ListViewItem>();
+                        foreach (var objUserEntity in userEntities)
+                        {
+                            var displayName = "";
+                            if (objUserEntity.Attributes.Contains("fullname"))
+                            {
+                                displayName = (string)objUserEntity["fullname"];
+                            }
+                            var lvItem = new ListViewItem()
+                            {
+                                Name = @"Name",
+                                ImageIndex = 0,
+                                StateImageIndex = 0,
+                                Text = displayName,
+                                Tag = objUserEntity
+                            };
+
+                            if (objUserEntity.Attributes.Contains("domainname"))
+                            {
+                                lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, (string)objUserEntity["domainname"]) { Tag = "domainname", Name = @"domainname" });
+                            }
+                            if (objUserEntity.Attributes.Contains("islicensed"))
+                            {
+                                var state = ((bool)objUserEntity["islicensed"]) ? "Licensed" : "Unlicensed";
+                                lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, state) { Tag = "islicensed", Name = @"islicensed" });
+                            }
+                            _usersListViewItemsColl.Add(lvItem);
+                        }
+                        listViewSystemUsers.Items.AddRange(_usersListViewItemsColl.ToArray<ListViewItem>());
+
+                        SortList(listViewSystemUsers);
+                        TbCheckAllSystemUsers.Visible = true;
+                        TbCheckAllSystemUsers.Enabled = true;
+                        TbLoadUserView.Visible = true;
+                        listViewSystemUsers.ResumeLayout();
+                        
+                        TxtSearchUsersList.Focus();
+                    }
+                }
+            });
+        }
+        private void LoadSystemUserSystemViews()
+        {
+            WorkAsync(new WorkAsyncInfo
+            {
+                Message = "Loading System View for User Entity...",
+                Work = (bw, e) =>
+                {
+                    e.Result = CrmAction.GetAllSystemUsersViews(Service);
+                },
+                PostWorkCallBack = e =>
+                {
+                    if (e.Error != null)
+                    {
+                        MessageBox.Show(ParentForm, e.Error.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    else
+                    {
+                        TblstUserView.DropDownItems.Clear();
+                        _systemViewOnUserEntity = (IEnumerable<Entity>)e.Result;
+                        foreach (var objUserEntity in _systemViewOnUserEntity)
+                        {
+                            var displayName = "";
+                            if (objUserEntity.Attributes.Contains("name"))
+                            {
+                                displayName = (string)objUserEntity["name"];
+                            }
+                            TblstUserView.DropDownItems.Add(displayName);
+                        }
+
+                        TblstUserView.Enabled = true;
+                    }
+                }
+            });
+        }
+
+        private void TabMainDetaiils_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (tabMainDetaiils.SelectedTab == tabUserView)
+            {
+                if (listViewSystemUsers.Items.Count == 0)
+                {
+                    ExecuteMethod(LoadSystemUser);
+                    ExecuteMethod(LoadSystemUserSystemViews);
+                    TblstUserView.Text = @"Select User View";
+                    listViewViewUsers.Items.Clear();
+                }
+                ToggleTabButtonVisibility(false);
+            }
+            else
+            {
+                ToggleTabButtonVisibility(true);
+            }
+        }
+
+        private void ToggleTabButtonVisibility(bool currentState)
+        {
+            tbLoadDependency.Visible = currentState;
+            tbDeleteSelectedDependency.Visible = currentState;
+            tbReplaceSelectedDependency.Visible = currentState;
+            tbCheckAllSystemForms.Visible = currentState;
+            TbCheckAllSystemViews.Visible = currentState;
+            tssSeparator2.Visible = currentState;
+            tssSeparator3.Visible = currentState;
+            tssSeparator4.Visible = currentState;
+            tssSeparator5.Visible = currentState;
+            tssSeparator6.Visible = currentState;
+           // tssSeparator7.Visible = currentState;
+
+            TblstUserView.Visible = !currentState;
+            TbLoadUserView.Visible = !currentState;
+            tbDeleteSelectedUserDependency.Visible = !currentState;
+            tbReplaceSelectedUserDependency.Visible = !currentState;
+            TbCheckAllSystemUsers.Visible = !currentState;
+            TbCheckAllUserViews.Visible = !currentState;
+            tssSeparator8.Visible = !currentState;
+            tssSeparator9.Visible = !currentState;
+            tssSeparator10.Visible = !currentState;
+            tssSeparator11.Visible = !currentState;
+            tssSeparator12.Visible = !currentState;
+            tssSeparator13.Visible = !currentState;
+        }
+
+        private void CheckUnCheckToggle(ToolStripItem toogleButton, ListView listView,bool currentState)
+        {
+            _itemCheckedEvnt = true;
+            foreach (ListViewItem item in listView.Items)
+            {
+                item.Checked = currentState;
+            }
+            _itemCheckedEvnt = false;
+            toogleButton.Image = currentState ? Properties.Resources.check_all : Properties.Resources.uncheck_all;
+        }
+
+        private void TbCheckAllUserViews_Click(object sender, EventArgs e)
+        {
+            if (TbCheckAllUserViews.Text == @"Check All User Views")
+            {
+                CheckUnCheckToggle(TbCheckAllUserViews, listViewViewUsers, true);
+                TbCheckAllUserViews.Text = @"Uncheck All User Views";
+                if (listViewEntities.SelectedItems.Count > 0 && listViewAttributes.SelectedItems.Count > 0)
+                    tbDeleteSelectedUserDependency.Enabled = true;
+                if (listViewAttributesReplaced.SelectedItems.Count > 0)
+                    tbReplaceSelectedUserDependency.Enabled = true;
+            }
+            else
+            {
+                CheckUnCheckToggle(TbCheckAllUserViews, listViewViewUsers, false);
+                TbCheckAllUserViews.Text = @"Check All User Views";
+                tbDeleteSelectedUserDependency.Enabled = false;
+                tbReplaceSelectedUserDependency.Enabled = false;
+            }
+        }
+
+        private void TbLoadUserView_Click(object sender, EventArgs e)
+        {
+            ExecuteMethod(LoadUsersViews);
+        }
+        private void LoadUsersViews()
+        {
+            TbCheckAllUserViews.Text = @"Check All User Views";
+            TbCheckAllUserViews.Enabled = true;
+            _viewListUserViewGroup = new List<ListViewGroup>();
+            _viewListUserViewItemsColl = new List<ListViewItem>();
+            listViewViewUsers.Items.Clear();
+
+            var checkedItemsProcess = ConvertListViweItems(listViewSystemUsers.CheckedItems.Cast<ListViewItem>().ToList());
+            LoadUserView(checkedItemsProcess);
+        }
+        private static List<ClsViiewItemsChecked> ConvertListViweItems(IEnumerable<ListViewItem> checkedItems)
+        {
+            return checkedItems.Select(item => new ClsViiewItemsChecked { CheckedItem = item, CheckItemProcessed = false }).ToList();
+        }
+        private void LoadUserView(IReadOnlyCollection<ClsViiewItemsChecked> checkedItems)
+        {
+            if (checkedItems.All(c => c.CheckItemProcessed)) return;
+            {
+                var objListItem = checkedItems.FirstOrDefault(c => c.CheckItemProcessed == false);
+                if (objListItem == null) return;
+                {
+                    var systemUser = (Entity)objListItem.CheckedItem.Tag;
+                    ((CrmServiceClient)Service).CallerId = systemUser.Id;
+                    var itemProcssed = checkedItems.Count(c => c.CheckItemProcessed);
+                    var totalItems = checkedItems.Count;
+                    var itemsRemain = totalItems - itemProcssed;
+                    var objUserViewRequest = GetUserViewRequest();
+                    if (objUserViewRequest != null)
+                    {
+                        WorkAsync(new WorkAsyncInfo
+                        {
+                            Message =
+                                $"Fetching User View  for {objListItem.CheckedItem.Text}\n Total Users: {totalItems}, Process:{itemProcssed} Remaining:{itemsRemain} ",
+                            Work = (bw, e) =>
+                            {
+                                e.Result = CrmAction.GetAllUserViews(Service, objUserViewRequest.ObjEntity.ObjectTypeCode, objUserViewRequest.AttributeSelected);
+                            },
+                            PostWorkCallBack = e =>
+                            {
+                                if (e.Error != null)
+                                {
+                                    MessageBox.Show(ParentForm, e.Error.Message, @"Error",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                }
+                                else
+                                {
+                                    if (e.Result != null)
+                                        AddUserViews((IEnumerable<Entity>) e.Result, systemUser, objUserViewRequest);
+                                    objListItem.CheckItemProcessed = true;
+                                    LoadUserView(checkedItems);
+                                    if (checkedItems.Any(c => c.CheckItemProcessed == false)) return;
+                                    listViewViewUsers.Groups.AddRange(_viewListUserViewGroup.ToArray<ListViewGroup>());
+                                    listViewViewUsers.Items.AddRange(_viewListUserViewItemsColl.ToArray<ListViewItem>());
+                                    SortList(listViewViewUsers);
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
+        private void AddUserViews(IEnumerable<Entity> userViews, Entity systemUser, UserViewRequest objUserViewRequest)
+        {
+            var userFullName = systemUser.Attributes.Contains("fullname") ? (string)systemUser["fullname"] : "";
+            foreach (var objViewEntity in userViews)
+            {
+                var layoutXml = (string)objViewEntity["layoutxml"];
+                var isFound = XmlOperation.FindXmlControl(layoutXml, objUserViewRequest.AttributeSelected, "cell", "name");
+                if (!isFound)
+                {
+                    layoutXml = (string)objViewEntity["fetchxml"];
+                    isFound = XmlOperation.FindXmlControl(layoutXml, objUserViewRequest.AttributeSelected, "attribute", "name");
+                    if (!isFound)
+                        isFound = XmlOperation.FindXmlControl(layoutXml, objUserViewRequest.AttributeSelected, "condition", "attribute");
+                }
+
+                if (!isFound) continue;
+                var displayName = "";
+                if (objViewEntity.Attributes.Contains("name"))
+                {
+                    displayName = (string)objViewEntity["name"];
+                }
+                ListViewGroup group;
+                if (_viewListUserViewGroup.All(o => o.Name != userFullName))
+                {
+                    group = new ListViewGroup(userFullName)
+                    {
+                        Name = userFullName,
+                        Tag = systemUser
+                    };
+                    _viewListUserViewGroup.Add(group);
+                }
+                else
+                {
+                    group = _viewListUserViewGroup.FirstOrDefault(o => o.Name == userFullName);
+                }
+
+                var lvItem = new ListViewItem()
+                {
+                    Name = @"ViewName",
+                    ImageIndex = 0,
+                    StateImageIndex = 0,
+                    Text = displayName,
+                    Tag = objViewEntity,  // stash the template here so we can view details later
+                    Group = group
+                };
+                _viewListUserViewItemsColl.Add(lvItem);
+            }
+        }
+
+        private void ReplaceAttributeControl_Load(object sender, EventArgs e)
+        {
+            TbLoadUserView.Visible = false;
+        }
+
+        private void ListViewSystemUsers_ItemChecked(object sender, ItemCheckedEventArgs e)
+        {
+            if (_itemCheckedEvnt) return;
+            if (listViewEntities.SelectedItems.Count > 0 && listViewAttributes.SelectedItems.Count > 0)
+                TbLoadUserView.Enabled = listViewSystemUsers.CheckedItems.Count > 0;
+        }
+
+        private void TblstUserView_DropDownItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+            var selectedView = _systemViewOnUserEntity?.Where(k => k.Attributes.Contains("name") && (string)k.Attributes["name"] == e.ClickedItem.Text).FirstOrDefault();
+            TblstUserView.Text = e.ClickedItem.Text;
+            if (selectedView == null) return;
+            if (!selectedView.Attributes.Contains("fetchxml")) return;
+            listViewViewUsers.Items.Clear();
+            TbLoadUserView.Enabled = false;
+            tbDeleteSelectedUserDependency.Enabled = false;
+            tbReplaceSelectedUserDependency.Enabled = false;
+            TbCheckAllUserViews.Enabled = false;
+            LoadSystemUser((string) selectedView["fetchxml"]);
+        }
+
+        private void ListViewViewUsers_ItemChecked(object sender, ItemCheckedEventArgs e)
+        {
+            if (_itemCheckedEvnt) return;
+            if (listViewEntities.SelectedItems.Count > 0 && listViewAttributes.SelectedItems.Count > 0)
+                tbDeleteSelectedUserDependency.Enabled = listViewViewUsers.CheckedItems.Count > 0;
+            if (listViewAttributesReplaced.SelectedItems.Count > 0)
+                tbReplaceSelectedUserDependency.Enabled = listViewViewUsers.CheckedItems.Count > 0;
+        }
+
+        private void TbDeleteSelectedUserDependency_Click(object sender, EventArgs e)
+        {
+            if (listViewEntities.SelectedItems.Count <= 0 || listViewAttributes.SelectedItems.Count <= 0) return;
+            var objUserViewRequest = GetUserViewRequest();
+            if(objUserViewRequest == null) return;
+
+            var objRequest = new XmlRequest()
+            {
+                IsUserView = true,
+                ServiceProxy = Service,
+                ObjPlugin = this,
+                OldAttributeName = objUserViewRequest.AttributeSelected,
+                ReplaceAttributeName = string.Empty,
+                IsViewDependency = false,
+                CheckedFromItems = null,
+                CheckedItemsViews = null,
+                ObjAttDataReplace = null,
+                Objentity = objUserViewRequest.ObjEntity
+            };
+            if (listViewViewUsers.CheckedItems.Count <= 0) return;
+            objRequest.CheckedItemsViews = listViewViewUsers.CheckedItems.Cast<ListViewItem>().ToList();
+            XmlOperation.TaskCompletedCallBack callback = CallBackAfterOperation;
+            XmlOperation.DeleteViewDependency(objRequest, callback);
+        }
+
+        private void TbReplaceSelectedUserDependency_Click(object sender, EventArgs e)
+        {
+            var objUserViewRequest = GetUserViewRequest();
+            if (objUserViewRequest == null) return;
+            var objRequest = new XmlRequest()
+            {
+                IsUserView = true,
+                ObjPlugin = this,
+                ServiceProxy = Service,
+                OldAttributeName = objUserViewRequest.AttributeSelected,
+                ReplaceAttributeName = objUserViewRequest.NewAttributeName,
+                IsViewDependency = false,
+                CheckedFromItems = null,
+                CheckedItemsViews = null,
+                ObjAttDataReplace = null,
+                Objentity = objUserViewRequest.ObjEntity
+            };
+            if (listViewViewUsers.CheckedItems.Count <= 0) return;
+            objRequest.CheckedItemsViews = listViewViewUsers.CheckedItems.Cast<ListViewItem>().ToList();
+            XmlOperation.TaskCompletedCallBack callback = CallBackAfterOperation;
+            XmlOperation.ReplaceViewDependency(objRequest, callback);
+        }
+        private void CallBackAfterOperation(XmlRequest request)
+        {
+            LoadUsersViews();
+        }
     }
 }

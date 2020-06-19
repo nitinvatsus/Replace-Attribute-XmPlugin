@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ReplaceAttributeXmPlugin.Helper
+﻿namespace ReplaceAttributeXmPlugin.Helper
 {
     public class XmlResults
     {
@@ -13,11 +7,11 @@ namespace ReplaceAttributeXmPlugin.Helper
             IsPublish = pubResult;
             LayoutXml = string.Empty;
             FetchXml = string.Empty;
-            oldFetchXml = string.Empty;
+            OldFetchXml = string.Empty;
         }
         public string LayoutXml { get; set; }
         public string FetchXml { get; set; }
-        public string oldFetchXml { get; set; }
+        public string OldFetchXml { get; set; }
         public bool IsPublish { get; set; }
     }
 }

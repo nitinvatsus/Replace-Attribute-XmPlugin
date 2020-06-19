@@ -2,13 +2,12 @@
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Query;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace ReplaceAttributeXmPlugin.Helper
 {
-    public class CRMAction
+    public static class CrmAction
     {
         public static List<EntityMetadata> GetAllEntities(IOrganizationService service)
         {
@@ -18,13 +17,12 @@ namespace ReplaceAttributeXmPlugin.Helper
                 RetrieveAsIfPublished = true
             };
             var resp = (RetrieveAllEntitiesResponse)service.Execute(req);
-            var entities = resp.EntityMetadata.Where(x => x.IsCustomizable.Value == true).ToList();
+            var entities = resp.EntityMetadata.Where(x => x.IsCustomizable.Value).ToList();
             return entities;
         }
-
         public static IEnumerable<Entity> GetAllSystemForms(IOrganizationService service, int? objectTypeCode, string attributeName)
         {
-            string fetch = string.Format(@"<fetch>
+            var fetch = $@"<fetch>
 	                                <entity name='systemform' >
 		                                <attribute name='name' />
 		                                <attribute name='formxml' />
@@ -33,17 +31,17 @@ namespace ReplaceAttributeXmPlugin.Helper
                                          <attribute name='type' />
                                          <attribute name='ismanaged' />
 		                                <filter type='and' >
-			                                <condition attribute='objecttypecode' operator='eq' value='{0}' />
-			                                <condition attribute='formxml' operator='like' value='%{1}%' />
+			                                <condition attribute='objecttypecode' operator='eq' value='{objectTypeCode}' />
+			                                <condition attribute='formxml' operator='like' value='%{attributeName}%' />
 		                                </filter>
 	                                </entity>
-                                </fetch>", objectTypeCode, attributeName);
-            EntityCollection result = service.RetrieveMultiple(new FetchExpression(fetch));
+                                </fetch>";
+            var result = service.RetrieveMultiple(new FetchExpression(fetch));
             return result.Entities;
         }
         public static IEnumerable<Entity> GetAllSystemViews(IOrganizationService service, int? objectTypeCode, string attributeName)
         {
-            string fetch = string.Format(@"<fetch>
+            var fetch = string.Format(@"<fetch>
 	                                        <entity name='savedquery' >
 		                                        <attribute name='savedqueryid' />
 		                                        <attribute name='conditionalformatting' />
@@ -62,7 +60,27 @@ namespace ReplaceAttributeXmPlugin.Helper
 		                                        </filter>
 	                                        </entity>
                                         </fetch>", objectTypeCode, attributeName);
-            EntityCollection result = service.RetrieveMultiple(new FetchExpression(fetch));
+            var result = service.RetrieveMultiple(new FetchExpression(fetch));
+            return result.Entities;
+        }
+        public static IEnumerable<Entity> GetAllSystemUsersViews(IOrganizationService service)
+        {
+            var fetch = @"<fetch>
+	                                        <entity name='savedquery' >
+		                                        <attribute name='savedqueryid' />
+		                                        <attribute name='conditionalformatting' />
+		                                        <attribute name='name' />
+		                                        <attribute name='iscustomizable' />
+		                                        <attribute name='fetchxml' />
+		                                        <attribute name='ismanaged' />
+		                                        <attribute name='returnedtypecode' />
+		                                        <attribute name='layoutxml' />
+		                                        <filter type='and' >
+			                                        <condition attribute='returnedtypecode' operator='eq' value='8' />
+		                                        </filter>
+	                                        </entity>
+                                        </fetch>";
+            var result = service.RetrieveMultiple(new FetchExpression(fetch));
             return result.Entities;
         }
         public static EntityMetadata RetrieveEntityAttributeMeta(IOrganizationService service, string logicalName)
@@ -82,7 +100,7 @@ namespace ReplaceAttributeXmPlugin.Helper
         {
             try
             {
-                string fetch = string.Format(@"<fetch>
+                var fetch = string.Format(@"<fetch>
 	                                        <entity name='userquery' >
 		                                        <attribute name='userqueryid' />
 		                                        <attribute name='name' />
@@ -100,7 +118,7 @@ namespace ReplaceAttributeXmPlugin.Helper
 		                                        </filter>
 	                                        </entity>
                                         </fetch>", objectTypeCode, attributeName);
-                EntityCollection result = service.RetrieveMultiple(new FetchExpression(fetch));
+                var result = service.RetrieveMultiple(new FetchExpression(fetch));
                 return result.Entities;
             }
             catch
@@ -110,7 +128,7 @@ namespace ReplaceAttributeXmPlugin.Helper
         }
         public static IEnumerable<Entity> GetAllSystemUsers(IOrganizationService service)
         {
-            string fetch = string.Format(@"<fetch version='1.0' output-format='xml-platform' mapping='logical' distinct='false'>
+            const string fetch = @"<fetch version='1.0' output-format='xml-platform' mapping='logical' distinct='false'>
                                               <entity name='systemuser'>
                                                 <attribute name='fullname' />
                                                 <attribute name='businessunitid' />
@@ -126,8 +144,13 @@ namespace ReplaceAttributeXmPlugin.Helper
                                                   </condition>
                                                 </filter>
                                               </entity>
-                                            </fetch>");
-            EntityCollection result = service.RetrieveMultiple(new FetchExpression(fetch));
+                                            </fetch>";
+            var result = service.RetrieveMultiple(new FetchExpression(fetch));
+            return result.Entities;
+        }
+        public static IEnumerable<Entity> GetAllSystemUsers(IOrganizationService service, string fetchxml)
+        {
+            var result = service.RetrieveMultiple(new FetchExpression(fetchxml));
             return result.Entities;
         }
     }

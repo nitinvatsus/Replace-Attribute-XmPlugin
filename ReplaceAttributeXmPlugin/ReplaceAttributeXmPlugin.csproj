@@ -133,15 +133,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration.cs" />
-    <Compile Include="FromUserView.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="FromUserView.Designer.cs">
-      <DependentUpon>FromUserView.cs</DependentUpon>
-    </Compile>
     <Compile Include="Helper\ClsViiewItemsChecked.cs" />
     <Compile Include="Helper\CRMAction.cs" />
     <Compile Include="Helper\ListViewItemComparer.cs" />
+    <Compile Include="Helper\UserViewRequest.cs" />
     <Compile Include="Helper\XmlOperation.cs" />
     <Compile Include="Helper\XmlOperationResult.cs" />
     <Compile Include="Helper\XmlRequest.cs" />
@@ -158,16 +153,12 @@
       <DependentUpon>ReplaceAttributeControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Settings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="FromUserView.resx">
-      <DependentUpon>FromUserView.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -187,6 +178,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\dependencies1.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\uncheck-all.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\check-all.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\uncheck-all1.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
