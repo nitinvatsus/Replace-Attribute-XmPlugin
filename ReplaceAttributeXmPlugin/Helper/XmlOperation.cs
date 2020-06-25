@@ -76,7 +76,7 @@ namespace ReplaceAttributeXmPlugin.Helper
 
         public static void DeleteViewDependency(XmlRequest request, TaskCompletedCallBack taskCompletedCallBack)
         {
-            List<ClsViiewItemsChecked> checkedItemsProcess = ConvertListViweItems(request.CheckedItemsViews);
+            var checkedItemsProcess = ConvertListViweItems(request.CheckedItemsViews);
             DeleteViewDependencyRecuricive(request, checkedItemsProcess, taskCompletedCallBack);
         }
 
@@ -135,10 +135,10 @@ namespace ReplaceAttributeXmPlugin.Helper
 
         public static void ReplaceFormDependency(XmlRequest request, TaskCompletedCallBack taskCompletedCallBack)
         {
-            List<ClsViiewItemsChecked> checkedItemsProcess = ConvertListViweItems(request.CheckedFromItems);
+            var checkedItemsProcess = ConvertListViweItems(request.CheckedFromItems);
             ReplaceFormDependencyRecuricive(request, checkedItemsProcess, taskCompletedCallBack);
         }
-        private static void ReplaceFormDependencyRecuricive(XmlRequest request, List<ClsViiewItemsChecked> checkedItems, TaskCompletedCallBack taskCompletedCallBack)
+        private static void ReplaceFormDependencyRecuricive(XmlRequest request, IReadOnlyCollection<ClsViiewItemsChecked> checkedItems, TaskCompletedCallBack taskCompletedCallBack)
         {
             if (checkedItems.All(c => c.CheckItemProcessed)) return;
             {

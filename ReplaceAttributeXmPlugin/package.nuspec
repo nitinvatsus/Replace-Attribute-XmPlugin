@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <!--*-->
+    <id>ReplaceAttributeXmPlugin</id>
+    <!--*-->
+    <version>1.2.0</version>
+    <title>ReplaceAttributeXmPlugin</title>
+    <!--*-->
+    <authors>Nitin Sharma</authors>
+    <owners>Nitin Sharma</owners>
+    <!--
+    <licenseUrl></licenseUrl>
+    <projectUrl></projectUrl>
+    <iconUrl></iconUrl>
+-->
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <!--*-->
+    <description>Replace/Delete Attribute from View and Form</description>
+    <!--*-->
+    <releaseNotes>Replace/Delete Attribute from View and Form</releaseNotes>
+    <copyright>Copyright ©  2020</copyright>
+    <tags>XMRToolbox Plugin</tags>
+    <dependencies>
+      <!--
+      <dependency id="SampleDependency" version="1.0" />
+-->
+    </dependencies>
+  </metadata>
+</package>

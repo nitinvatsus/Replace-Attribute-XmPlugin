@@ -81,7 +81,7 @@ namespace ReplaceAttributeXmPlugin
                     {
                         listViewEntities.Items.Clear();
                         _entitiesListViewItemsColl = new List<ListViewItem>();
-                        foreach (EntityMetadata entity in (List<EntityMetadata>)e.Result)
+                        foreach (var entity in (List<EntityMetadata>)e.Result)
                         {
                             LocalizedLabel localLabel = null;
                             if (entity.DisplayName.LocalizedLabels.Count > 0)
@@ -191,7 +191,7 @@ namespace ReplaceAttributeXmPlugin
                             listViewForms.Items.Clear();
                             _formsListViewItemsColl = new List<ListViewItem>();
                             _formListViewGroup = new List<ListViewGroup>();
-                            foreach (Entity objFormEntity in formEntity)
+                            foreach (var objFormEntity in formEntity)
                             {
                                 var layoutXml = (string)objFormEntity["formxml"];
                                 if (!XmlOperation.FindXmlControl(layoutXml, attribute.LogicalName, "control", "id"))
@@ -1234,6 +1234,11 @@ namespace ReplaceAttributeXmPlugin
         private void CallBackAfterOperation(XmlRequest request)
         {
             LoadUsersViews();
+        }
+
+        private void listViewSystemUsers_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
