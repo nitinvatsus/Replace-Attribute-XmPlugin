@@ -29,12 +29,12 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ReplaceAttributeControl));
-            System.Windows.Forms.ListViewGroup listViewGroup7 = new System.Windows.Forms.ListViewGroup("Custom", System.Windows.Forms.HorizontalAlignment.Left);
-            System.Windows.Forms.ListViewGroup listViewGroup8 = new System.Windows.Forms.ListViewGroup("System", System.Windows.Forms.HorizontalAlignment.Left);
-            System.Windows.Forms.ListViewGroup listViewGroup9 = new System.Windows.Forms.ListViewGroup("Custom", System.Windows.Forms.HorizontalAlignment.Left);
-            System.Windows.Forms.ListViewGroup listViewGroup10 = new System.Windows.Forms.ListViewGroup("System", System.Windows.Forms.HorizontalAlignment.Left);
-            System.Windows.Forms.ListViewGroup listViewGroup11 = new System.Windows.Forms.ListViewGroup("Custom", System.Windows.Forms.HorizontalAlignment.Left);
-            System.Windows.Forms.ListViewGroup listViewGroup12 = new System.Windows.Forms.ListViewGroup("System", System.Windows.Forms.HorizontalAlignment.Left);
+            System.Windows.Forms.ListViewGroup listViewGroup1 = new System.Windows.Forms.ListViewGroup("Custom", System.Windows.Forms.HorizontalAlignment.Left);
+            System.Windows.Forms.ListViewGroup listViewGroup2 = new System.Windows.Forms.ListViewGroup("System", System.Windows.Forms.HorizontalAlignment.Left);
+            System.Windows.Forms.ListViewGroup listViewGroup3 = new System.Windows.Forms.ListViewGroup("Custom", System.Windows.Forms.HorizontalAlignment.Left);
+            System.Windows.Forms.ListViewGroup listViewGroup4 = new System.Windows.Forms.ListViewGroup("System", System.Windows.Forms.HorizontalAlignment.Left);
+            System.Windows.Forms.ListViewGroup listViewGroup5 = new System.Windows.Forms.ListViewGroup("Custom", System.Windows.Forms.HorizontalAlignment.Left);
+            System.Windows.Forms.ListViewGroup listViewGroup6 = new System.Windows.Forms.ListViewGroup("System", System.Windows.Forms.HorizontalAlignment.Left);
             this.toolStripMenu = new System.Windows.Forms.ToolStrip();
             this.tsbClose = new System.Windows.Forms.ToolStripButton();
             this.tssSeparator1 = new System.Windows.Forms.ToolStripSeparator();
@@ -602,15 +602,15 @@
             this.columnHeader3,
             this.columnHeader4});
             this.listViewAttributes.FullRowSelect = true;
-            listViewGroup7.Header = "Custom";
-            listViewGroup7.Name = "Custom";
-            listViewGroup7.Tag = "Custom";
-            listViewGroup8.Header = "System";
-            listViewGroup8.Name = "System";
-            listViewGroup8.Tag = "System";
+            listViewGroup1.Header = "Custom";
+            listViewGroup1.Name = "Custom";
+            listViewGroup1.Tag = "Custom";
+            listViewGroup2.Header = "System";
+            listViewGroup2.Name = "System";
+            listViewGroup2.Tag = "System";
             this.listViewAttributes.Groups.AddRange(new System.Windows.Forms.ListViewGroup[] {
-            listViewGroup7,
-            listViewGroup8});
+            listViewGroup1,
+            listViewGroup2});
             this.listViewAttributes.HideSelection = false;
             this.listViewAttributes.Location = new System.Drawing.Point(16, 62);
             this.listViewAttributes.Margin = new System.Windows.Forms.Padding(4);
@@ -682,15 +682,15 @@
             this.colName,
             this.colState});
             this.listViewEntities.FullRowSelect = true;
-            listViewGroup9.Header = "Custom";
-            listViewGroup9.Name = "Custom";
-            listViewGroup9.Tag = "Custom";
-            listViewGroup10.Header = "System";
-            listViewGroup10.Name = "System";
-            listViewGroup10.Tag = "System";
+            listViewGroup3.Header = "Custom";
+            listViewGroup3.Name = "Custom";
+            listViewGroup3.Tag = "Custom";
+            listViewGroup4.Header = "System";
+            listViewGroup4.Name = "System";
+            listViewGroup4.Tag = "System";
             this.listViewEntities.Groups.AddRange(new System.Windows.Forms.ListViewGroup[] {
-            listViewGroup9,
-            listViewGroup10});
+            listViewGroup3,
+            listViewGroup4});
             this.listViewEntities.HideSelection = false;
             this.listViewEntities.Location = new System.Drawing.Point(13, 62);
             this.listViewEntities.Margin = new System.Windows.Forms.Padding(4);
@@ -808,15 +808,15 @@
             this.domainname,
             this.islicensed});
             this.listViewSystemUsers.FullRowSelect = true;
-            listViewGroup11.Header = "Custom";
-            listViewGroup11.Name = "Custom";
-            listViewGroup11.Tag = "Custom";
-            listViewGroup12.Header = "System";
-            listViewGroup12.Name = "System";
-            listViewGroup12.Tag = "System";
+            listViewGroup5.Header = "Custom";
+            listViewGroup5.Name = "Custom";
+            listViewGroup5.Tag = "Custom";
+            listViewGroup6.Header = "System";
+            listViewGroup6.Name = "System";
+            listViewGroup6.Tag = "System";
             this.listViewSystemUsers.Groups.AddRange(new System.Windows.Forms.ListViewGroup[] {
-            listViewGroup11,
-            listViewGroup12});
+            listViewGroup5,
+            listViewGroup6});
             this.listViewSystemUsers.HideSelection = false;
             this.listViewSystemUsers.Location = new System.Drawing.Point(10, 64);
             this.listViewSystemUsers.Margin = new System.Windows.Forms.Padding(5);
@@ -829,6 +829,7 @@
             this.listViewSystemUsers.UseCompatibleStateImageBehavior = false;
             this.listViewSystemUsers.View = System.Windows.Forms.View.Details;
             this.listViewSystemUsers.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.ListViewSystemUsers_ItemChecked);
+            this.listViewSystemUsers.SelectedIndexChanged += new System.EventHandler(this.listViewSystemUsers_SelectedIndexChanged);
             // 
             // colFullName
             // 
