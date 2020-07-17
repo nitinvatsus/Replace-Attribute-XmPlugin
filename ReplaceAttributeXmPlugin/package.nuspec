@@ -4,7 +4,7 @@
     <!--*-->
     <id>ReplaceAttributeXmPlugin</id>
     <!--*-->
-    <version>1.2.0</version>
+    <version>1.2020.1.1</version>
     <title>ReplaceAttributeXmPlugin</title>
     <!--*-->
     <authors>Nitin Sharma</authors>
@@ -16,11 +16,11 @@
 -->
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <!--*-->
-    <description>Replace/Delete Attribute from View and Form</description>
+    <description>Replace CRM Forms and View Attributes</description>
     <!--*-->
-    <releaseNotes>Replace/Delete Attribute from View and Form</releaseNotes>
+    <releaseNotes>Replace CRM Forms and View Attributes</releaseNotes>
     <copyright>Copyright ©  2020</copyright>
-    <tags>XMRToolbox Plugin</tags>
+    <tags>XRMToolbox</tags>
     <dependencies>
       <!--
       <dependency id="SampleDependency" version="1.0" />
