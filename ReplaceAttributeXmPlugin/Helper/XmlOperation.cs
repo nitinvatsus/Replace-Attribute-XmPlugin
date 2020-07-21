@@ -408,13 +408,11 @@ namespace ReplaceAttributeXmPlugin.Helper
                 xmlNode?.RemoveChild(xmlNodes.FirstOrDefault() ?? throw new InvalidOperationException());
                 return (new XmlOperationResult(doc.InnerXml, true));
             }
-            else
-            {
-                var findNode = FindControlParentNode(xmlNodes.FirstOrDefault(), searchNodeName);
-                if (findNode == null || findNode.Name != searchNodeName) return (new XmlOperationResult("", false));
-                findNode.ParentNode?.RemoveChild(findNode);
-                return (new XmlOperationResult(doc.InnerXml, true));
-            }
+
+            var findNode = FindControlParentNode(xmlNodes.FirstOrDefault(), searchNodeName);
+            if (findNode == null || findNode.Name != searchNodeName) return (new XmlOperationResult("", false));
+            findNode.ParentNode?.RemoveChild(findNode);
+            return (new XmlOperationResult(doc.InnerXml, true));
         }
         private static XmlNode FindControlParentNode(XmlNode controlNode, string searchNodeName)
         {
@@ -436,7 +434,7 @@ namespace ReplaceAttributeXmPlugin.Helper
 
         private static void PublishEntity(PluginControlBase objPlugin, IOrganizationService serviceProxy, EntityMetadata entityItem)
         {
-            string paramXml =
+            var paramXml =
                 $" <importexportxml><entities><entity>{entityItem.LogicalName}</entity></entities><nodes/><securityroles/><settings/><workflows/></importexportxml>";
             objPlugin.WorkAsync(new WorkAsyncInfo
             {
@@ -453,6 +451,11 @@ namespace ReplaceAttributeXmPlugin.Helper
                     if (ex.Error != null)
                     {
                         MessageBox.Show(objPlugin.ParentForm, ex.Error.Message, @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    else
+                    {
+                        MessageBox.Show(@"Attribute Changes are successfully published", @"CRM Publish",
+                            MessageBoxButtons.OK);
                     }
                 }
             });

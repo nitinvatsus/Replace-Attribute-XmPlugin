@@ -41,29 +41,20 @@
             this.tbLoadEntities = new System.Windows.Forms.ToolStripButton();
             this.tssSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.tbLoadDependency = new System.Windows.Forms.ToolStripButton();
-            this.tssSeparator3 = new System.Windows.Forms.ToolStripSeparator();
-            this.tbDeleteSelectedDependency = new System.Windows.Forms.ToolStripButton();
-            this.tssSeparator4 = new System.Windows.Forms.ToolStripSeparator();
-            this.tbReplaceSelectedDependency = new System.Windows.Forms.ToolStripButton();
-            this.tssSeparator5 = new System.Windows.Forms.ToolStripSeparator();
-            this.tbCheckAllSystemForms = new System.Windows.Forms.ToolStripButton();
-            this.tssSeparator6 = new System.Windows.Forms.ToolStripSeparator();
-            this.TbCheckAllSystemViews = new System.Windows.Forms.ToolStripButton();
-            this.tssSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.TblstUserView = new System.Windows.Forms.ToolStripDropDownButton();
             this.allActiveUsersToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.tssSeparator8 = new System.Windows.Forms.ToolStripSeparator();
+            this.tssSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+            this.tbDeleteSelectedDependency = new System.Windows.Forms.ToolStripButton();
             this.TbLoadUserView = new System.Windows.Forms.ToolStripButton();
-            this.tssSeparator9 = new System.Windows.Forms.ToolStripSeparator();
+            this.tssSeparator4 = new System.Windows.Forms.ToolStripSeparator();
+            this.tbReplaceSelectedDependency = new System.Windows.Forms.ToolStripButton();
             this.tbDeleteSelectedUserDependency = new System.Windows.Forms.ToolStripButton();
-            this.tssSeparator10 = new System.Windows.Forms.ToolStripSeparator();
+            this.tssSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.tbReplaceSelectedUserDependency = new System.Windows.Forms.ToolStripButton();
-            this.tssSeparator11 = new System.Windows.Forms.ToolStripSeparator();
-            this.TbCheckAllSystemUsers = new System.Windows.Forms.ToolStripButton();
-            this.tssSeparator12 = new System.Windows.Forms.ToolStripSeparator();
-            this.TbCheckAllUserViews = new System.Windows.Forms.ToolStripButton();
-            this.tssSeparator13 = new System.Windows.Forms.ToolStripSeparator();
-            this.tabMainDetaiils = new System.Windows.Forms.TabControl();
+            this.tssSeparator6 = new System.Windows.Forms.ToolStripSeparator();
+            this.tssSeparator7 = new System.Windows.Forms.ToolStripSeparator();
+            this.tssSeparator8 = new System.Windows.Forms.ToolStripSeparator();
+            this.tabMainDetails = new System.Windows.Forms.TabControl();
             this.tabSystemView = new System.Windows.Forms.TabPage();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
@@ -104,7 +95,7 @@
             this.domainname = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.islicensed = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.toolStripMenu.SuspendLayout();
-            this.tabMainDetaiils.SuspendLayout();
+            this.tabMainDetails.SuspendLayout();
             this.tabSystemView.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.groupBox5.SuspendLayout();
@@ -127,27 +118,18 @@
             this.tbLoadEntities,
             this.tssSeparator2,
             this.tbLoadDependency,
+            this.TblstUserView,
             this.tssSeparator3,
             this.tbDeleteSelectedDependency,
+            this.TbLoadUserView,
             this.tssSeparator4,
             this.tbReplaceSelectedDependency,
-            this.tssSeparator5,
-            this.tbCheckAllSystemForms,
-            this.tssSeparator6,
-            this.TbCheckAllSystemViews,
-            this.tssSeparator7,
-            this.TblstUserView,
-            this.tssSeparator8,
-            this.TbLoadUserView,
-            this.tssSeparator9,
             this.tbDeleteSelectedUserDependency,
-            this.tssSeparator10,
+            this.tssSeparator5,
             this.tbReplaceSelectedUserDependency,
-            this.tssSeparator11,
-            this.TbCheckAllSystemUsers,
-            this.tssSeparator12,
-            this.TbCheckAllUserViews,
-            this.tssSeparator13});
+            this.tssSeparator6,
+            this.tssSeparator7,
+            this.tssSeparator8});
             this.toolStripMenu.Location = new System.Drawing.Point(0, 0);
             this.toolStripMenu.Name = "toolStripMenu";
             this.toolStripMenu.Size = new System.Drawing.Size(2707, 37);
@@ -188,74 +170,10 @@
             this.tbLoadDependency.Image = global::ReplaceAttributeXmPlugin.Properties.Resources.icon_032;
             this.tbLoadDependency.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tbLoadDependency.Name = "tbLoadDependency";
+            this.tbLoadDependency.Overflow = System.Windows.Forms.ToolStripItemOverflow.Never;
             this.tbLoadDependency.Size = new System.Drawing.Size(197, 32);
             this.tbLoadDependency.Text = "Load Dependency";
             this.tbLoadDependency.Click += new System.EventHandler(this.TbLoadDependency_Click);
-            // 
-            // tssSeparator3
-            // 
-            this.tssSeparator3.Name = "tssSeparator3";
-            this.tssSeparator3.Size = new System.Drawing.Size(6, 37);
-            // 
-            // tbDeleteSelectedDependency
-            // 
-            this.tbDeleteSelectedDependency.Enabled = false;
-            this.tbDeleteSelectedDependency.Image = ((System.Drawing.Image)(resources.GetObject("tbDeleteSelectedDependency.Image")));
-            this.tbDeleteSelectedDependency.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.tbDeleteSelectedDependency.Name = "tbDeleteSelectedDependency";
-            this.tbDeleteSelectedDependency.Size = new System.Drawing.Size(210, 32);
-            this.tbDeleteSelectedDependency.Text = "Delete Dependency";
-            this.tbDeleteSelectedDependency.Click += new System.EventHandler(this.TbDeleteSelectedDependency_Click);
-            // 
-            // tssSeparator4
-            // 
-            this.tssSeparator4.Name = "tssSeparator4";
-            this.tssSeparator4.Size = new System.Drawing.Size(6, 37);
-            // 
-            // tbReplaceSelectedDependency
-            // 
-            this.tbReplaceSelectedDependency.Enabled = false;
-            this.tbReplaceSelectedDependency.Image = ((System.Drawing.Image)(resources.GetObject("tbReplaceSelectedDependency.Image")));
-            this.tbReplaceSelectedDependency.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.tbReplaceSelectedDependency.Name = "tbReplaceSelectedDependency";
-            this.tbReplaceSelectedDependency.Size = new System.Drawing.Size(221, 32);
-            this.tbReplaceSelectedDependency.Text = "Replace Dependency";
-            this.tbReplaceSelectedDependency.Click += new System.EventHandler(this.TbReplaceSelectedDependency_Click);
-            // 
-            // tssSeparator5
-            // 
-            this.tssSeparator5.Name = "tssSeparator5";
-            this.tssSeparator5.Size = new System.Drawing.Size(6, 37);
-            // 
-            // tbCheckAllSystemForms
-            // 
-            this.tbCheckAllSystemForms.Enabled = false;
-            this.tbCheckAllSystemForms.Image = global::ReplaceAttributeXmPlugin.Properties.Resources.uncheck_all;
-            this.tbCheckAllSystemForms.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.tbCheckAllSystemForms.Name = "tbCheckAllSystemForms";
-            this.tbCheckAllSystemForms.Size = new System.Drawing.Size(179, 32);
-            this.tbCheckAllSystemForms.Text = "Check All Forms";
-            this.tbCheckAllSystemForms.Click += new System.EventHandler(this.TbCheckAllSystemForms_Click);
-            // 
-            // tssSeparator6
-            // 
-            this.tssSeparator6.Name = "tssSeparator6";
-            this.tssSeparator6.Size = new System.Drawing.Size(6, 37);
-            // 
-            // TbCheckAllSystemViews
-            // 
-            this.TbCheckAllSystemViews.Enabled = false;
-            this.TbCheckAllSystemViews.Image = global::ReplaceAttributeXmPlugin.Properties.Resources.uncheck_all;
-            this.TbCheckAllSystemViews.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.TbCheckAllSystemViews.Name = "TbCheckAllSystemViews";
-            this.TbCheckAllSystemViews.Size = new System.Drawing.Size(174, 32);
-            this.TbCheckAllSystemViews.Text = "Check All Views";
-            this.TbCheckAllSystemViews.Click += new System.EventHandler(this.TbCheckAllSystemViews_Click);
-            // 
-            // tssSeparator7
-            // 
-            this.tssSeparator7.Name = "tssSeparator7";
-            this.tssSeparator7.Size = new System.Drawing.Size(6, 37);
             // 
             // TblstUserView
             // 
@@ -279,11 +197,21 @@
             this.allActiveUsersToolStripMenuItem.Size = new System.Drawing.Size(248, 36);
             this.allActiveUsersToolStripMenuItem.Text = "All Active Users";
             // 
-            // tssSeparator8
+            // tssSeparator3
             // 
-            this.tssSeparator8.Name = "tssSeparator8";
-            this.tssSeparator8.Size = new System.Drawing.Size(6, 37);
-            this.tssSeparator8.Visible = false;
+            this.tssSeparator3.Name = "tssSeparator3";
+            this.tssSeparator3.Size = new System.Drawing.Size(6, 37);
+            // 
+            // tbDeleteSelectedDependency
+            // 
+            this.tbDeleteSelectedDependency.Enabled = false;
+            this.tbDeleteSelectedDependency.Image = ((System.Drawing.Image)(resources.GetObject("tbDeleteSelectedDependency.Image")));
+            this.tbDeleteSelectedDependency.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tbDeleteSelectedDependency.Name = "tbDeleteSelectedDependency";
+            this.tbDeleteSelectedDependency.Overflow = System.Windows.Forms.ToolStripItemOverflow.Never;
+            this.tbDeleteSelectedDependency.Size = new System.Drawing.Size(210, 32);
+            this.tbDeleteSelectedDependency.Text = "Delete Dependency";
+            this.tbDeleteSelectedDependency.Click += new System.EventHandler(this.TbDeleteSelectedDependency_Click);
             // 
             // TbLoadUserView
             // 
@@ -296,11 +224,21 @@
             this.TbLoadUserView.Visible = false;
             this.TbLoadUserView.Click += new System.EventHandler(this.TbLoadUserView_Click);
             // 
-            // tssSeparator9
+            // tssSeparator4
             // 
-            this.tssSeparator9.Name = "tssSeparator9";
-            this.tssSeparator9.Size = new System.Drawing.Size(6, 37);
-            this.tssSeparator9.Visible = false;
+            this.tssSeparator4.Name = "tssSeparator4";
+            this.tssSeparator4.Size = new System.Drawing.Size(6, 37);
+            // 
+            // tbReplaceSelectedDependency
+            // 
+            this.tbReplaceSelectedDependency.Enabled = false;
+            this.tbReplaceSelectedDependency.Image = ((System.Drawing.Image)(resources.GetObject("tbReplaceSelectedDependency.Image")));
+            this.tbReplaceSelectedDependency.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tbReplaceSelectedDependency.Name = "tbReplaceSelectedDependency";
+            this.tbReplaceSelectedDependency.Overflow = System.Windows.Forms.ToolStripItemOverflow.Never;
+            this.tbReplaceSelectedDependency.Size = new System.Drawing.Size(221, 32);
+            this.tbReplaceSelectedDependency.Text = "Replace Dependency";
+            this.tbReplaceSelectedDependency.Click += new System.EventHandler(this.TbReplaceSelectedDependency_Click);
             // 
             // tbDeleteSelectedUserDependency
             // 
@@ -313,11 +251,10 @@
             this.tbDeleteSelectedUserDependency.Visible = false;
             this.tbDeleteSelectedUserDependency.Click += new System.EventHandler(this.TbDeleteSelectedUserDependency_Click);
             // 
-            // tssSeparator10
+            // tssSeparator5
             // 
-            this.tssSeparator10.Name = "tssSeparator10";
-            this.tssSeparator10.Size = new System.Drawing.Size(6, 37);
-            this.tssSeparator10.Visible = false;
+            this.tssSeparator5.Name = "tssSeparator5";
+            this.tssSeparator5.Size = new System.Drawing.Size(6, 37);
             // 
             // tbReplaceSelectedUserDependency
             // 
@@ -330,57 +267,32 @@
             this.tbReplaceSelectedUserDependency.Visible = false;
             this.tbReplaceSelectedUserDependency.Click += new System.EventHandler(this.TbReplaceSelectedUserDependency_Click);
             // 
-            // tssSeparator11
+            // tssSeparator6
             // 
-            this.tssSeparator11.Name = "tssSeparator11";
-            this.tssSeparator11.Size = new System.Drawing.Size(6, 37);
-            this.tssSeparator11.Visible = false;
+            this.tssSeparator6.Name = "tssSeparator6";
+            this.tssSeparator6.Size = new System.Drawing.Size(6, 37);
             // 
-            // TbCheckAllSystemUsers
+            // tssSeparator7
             // 
-            this.TbCheckAllSystemUsers.Enabled = false;
-            this.TbCheckAllSystemUsers.Image = global::ReplaceAttributeXmPlugin.Properties.Resources.uncheck_all;
-            this.TbCheckAllSystemUsers.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.TbCheckAllSystemUsers.Name = "TbCheckAllSystemUsers";
-            this.TbCheckAllSystemUsers.Size = new System.Drawing.Size(172, 32);
-            this.TbCheckAllSystemUsers.Text = "Check All Users";
-            this.TbCheckAllSystemUsers.Visible = false;
-            this.TbCheckAllSystemUsers.Click += new System.EventHandler(this.TbCheckAllSystemUsers_Click);
+            this.tssSeparator7.Name = "tssSeparator7";
+            this.tssSeparator7.Size = new System.Drawing.Size(6, 37);
             // 
-            // tssSeparator12
+            // tssSeparator8
             // 
-            this.tssSeparator12.Name = "tssSeparator12";
-            this.tssSeparator12.Size = new System.Drawing.Size(6, 37);
-            this.tssSeparator12.Visible = false;
+            this.tssSeparator8.Name = "tssSeparator8";
+            this.tssSeparator8.Size = new System.Drawing.Size(6, 37);
             // 
-            // TbCheckAllUserViews
+            // tabMainDetails
             // 
-            this.TbCheckAllUserViews.Enabled = false;
-            this.TbCheckAllUserViews.Image = global::ReplaceAttributeXmPlugin.Properties.Resources.uncheck_all;
-            this.TbCheckAllUserViews.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.TbCheckAllUserViews.Name = "TbCheckAllUserViews";
-            this.TbCheckAllUserViews.Size = new System.Drawing.Size(218, 32);
-            this.TbCheckAllUserViews.Text = "Check All User Views";
-            this.TbCheckAllUserViews.Visible = false;
-            this.TbCheckAllUserViews.Click += new System.EventHandler(this.TbCheckAllUserViews_Click);
-            // 
-            // tssSeparator13
-            // 
-            this.tssSeparator13.Name = "tssSeparator13";
-            this.tssSeparator13.Size = new System.Drawing.Size(6, 37);
-            this.tssSeparator13.Visible = false;
-            // 
-            // tabMainDetaiils
-            // 
-            this.tabMainDetaiils.Controls.Add(this.tabSystemView);
-            this.tabMainDetaiils.Controls.Add(this.tabUserView);
-            this.tabMainDetaiils.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tabMainDetaiils.Location = new System.Drawing.Point(0, 37);
-            this.tabMainDetaiils.Name = "tabMainDetaiils";
-            this.tabMainDetaiils.SelectedIndex = 0;
-            this.tabMainDetaiils.Size = new System.Drawing.Size(2707, 1090);
-            this.tabMainDetaiils.TabIndex = 24;
-            this.tabMainDetaiils.SelectedIndexChanged += new System.EventHandler(this.TabMainDetaiils_SelectedIndexChanged);
+            this.tabMainDetails.Controls.Add(this.tabSystemView);
+            this.tabMainDetails.Controls.Add(this.tabUserView);
+            this.tabMainDetails.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tabMainDetails.Location = new System.Drawing.Point(0, 37);
+            this.tabMainDetails.Name = "tabMainDetails";
+            this.tabMainDetails.SelectedIndex = 0;
+            this.tabMainDetails.Size = new System.Drawing.Size(2707, 1090);
+            this.tabMainDetails.TabIndex = 24;
+            this.tabMainDetails.SelectedIndexChanged += new System.EventHandler(this.TabMainDetaiils_SelectedIndexChanged);
             // 
             // tabSystemView
             // 
@@ -796,6 +708,7 @@
             this.TxtSearchUsersList.Name = "TxtSearchUsersList";
             this.TxtSearchUsersList.Size = new System.Drawing.Size(704, 30);
             this.TxtSearchUsersList.TabIndex = 3;
+            this.TxtSearchUsersList.TextChanged += new System.EventHandler(this.TxtSearchUsersList_TextChanged);
             // 
             // listViewSystemUsers
             // 
@@ -828,8 +741,8 @@
             this.listViewSystemUsers.Tag = "0";
             this.listViewSystemUsers.UseCompatibleStateImageBehavior = false;
             this.listViewSystemUsers.View = System.Windows.Forms.View.Details;
+            this.listViewSystemUsers.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.listViewSystemUsers_ColumnClick);
             this.listViewSystemUsers.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.ListViewSystemUsers_ItemChecked);
-            this.listViewSystemUsers.SelectedIndexChanged += new System.EventHandler(this.listViewSystemUsers_SelectedIndexChanged);
             // 
             // colFullName
             // 
@@ -853,7 +766,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.tabMainDetaiils);
+            this.Controls.Add(this.tabMainDetails);
             this.Controls.Add(this.toolStripMenu);
             this.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Margin = new System.Windows.Forms.Padding(4);
@@ -863,7 +776,7 @@
             this.Resize += new System.EventHandler(this.ReplaceAttributeControl_Resize);
             this.toolStripMenu.ResumeLayout(false);
             this.toolStripMenu.PerformLayout();
-            this.tabMainDetaiils.ResumeLayout(false);
+            this.tabMainDetails.ResumeLayout(false);
             this.tabSystemView.ResumeLayout(false);
             this.groupBox1.ResumeLayout(false);
             this.groupBox5.ResumeLayout(false);
@@ -891,14 +804,9 @@
         private System.Windows.Forms.ToolStripButton tbLoadDependency;
         private System.Windows.Forms.ToolStripButton tbDeleteSelectedDependency;
         private System.Windows.Forms.ToolStripButton tbReplaceSelectedDependency;
-        private System.Windows.Forms.ToolStripButton tbCheckAllSystemForms;
-        private System.Windows.Forms.ToolStripButton TbCheckAllSystemViews;
         private System.Windows.Forms.ToolStripSeparator tssSeparator2;
         private System.Windows.Forms.ToolStripSeparator tssSeparator3;
-        private System.Windows.Forms.ToolStripSeparator tssSeparator5;
-        private System.Windows.Forms.ToolStripSeparator tssSeparator6;
-        private System.Windows.Forms.ToolStripSeparator tssSeparator11;
-        private System.Windows.Forms.TabControl tabMainDetaiils;
+        private System.Windows.Forms.TabControl tabMainDetails;
         private System.Windows.Forms.TabPage tabSystemView;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.GroupBox groupBox5;
@@ -938,19 +846,15 @@
         private System.Windows.Forms.GroupBox groupBox8;
         private System.Windows.Forms.ListView listViewViewUsers;
         private System.Windows.Forms.ColumnHeader columnHeader5;
-        private System.Windows.Forms.ToolStripButton TbCheckAllSystemUsers;
-        private System.Windows.Forms.ToolStripButton TbCheckAllUserViews;
         private System.Windows.Forms.ToolStripDropDownButton TblstUserView;
         private System.Windows.Forms.ToolStripMenuItem allActiveUsersToolStripMenuItem;
-        private System.Windows.Forms.ToolStripSeparator tssSeparator7;
-        private System.Windows.Forms.ToolStripSeparator tssSeparator12;
-        private System.Windows.Forms.ToolStripSeparator tssSeparator13;
+        private System.Windows.Forms.ToolStripSeparator tssSeparator6;
         private System.Windows.Forms.ToolStripButton TbLoadUserView;
         private System.Windows.Forms.ToolStripButton tbDeleteSelectedUserDependency;
         private System.Windows.Forms.ToolStripButton tbReplaceSelectedUserDependency;
-        private System.Windows.Forms.ToolStripSeparator tssSeparator8;
-        private System.Windows.Forms.ToolStripSeparator tssSeparator9;
-        private System.Windows.Forms.ToolStripSeparator tssSeparator10;
+        private System.Windows.Forms.ToolStripSeparator tssSeparator5;
         private System.Windows.Forms.ToolStripSeparator tssSeparator4;
+        private System.Windows.Forms.ToolStripSeparator tssSeparator7;
+        private System.Windows.Forms.ToolStripSeparator tssSeparator8;
     }
 }
