@@ -4,6 +4,7 @@ using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Query;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml;
 
 namespace ReplaceAttributeXmPlugin.Helper
 {
@@ -148,10 +149,28 @@ namespace ReplaceAttributeXmPlugin.Helper
             var result = service.RetrieveMultiple(new FetchExpression(fetch));
             return result.Entities;
         }
+        
         public static IEnumerable<Entity> GetAllSystemUsers(IOrganizationService service, string fetchxml)
         {
-            var result = service.RetrieveMultiple(new FetchExpression(fetchxml));
+            var result = service.RetrieveMultiple(new FetchExpression(ModifyFetchXml(fetchxml)));
             return result.Entities;
+        }
+        private static string ModifyFetchXml(string requestXml)
+        {
+	        var doc = new XmlDocument();
+	        doc.LoadXml(requestXml);
+	        if (doc.DocumentElement == null) return doc.InnerXml;
+	        var node = doc.DocumentElement.SelectSingleNode("entity");
+	        AddElementInXml(doc, node, "fullname");
+	        AddElementInXml(doc, node, "domainname");
+	        AddElementInXml(doc, node, "islicensed");
+	        return doc.InnerXml;
+        }
+        private static void  AddElementInXml(XmlDocument doc, XmlNode node, string attributeName)
+        {
+	        var elem = doc.CreateElement("attribute");
+	        elem.SetAttribute("name", attributeName);
+	        node?.AppendChild(elem);
         }
     }
 }

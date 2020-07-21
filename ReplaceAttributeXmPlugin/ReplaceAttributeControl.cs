@@ -28,6 +28,13 @@ namespace ReplaceAttributeXmPlugin
         private EntityMetadata _attributesMetadata;
         private bool _itemCheckedEvnt;
 
+
+        private CheckBox _chkCheckAllSystemForms;
+        private CheckBox _chkCheckAllSystemViews;
+        private CheckBox _chkCheckAllSystemUsers;
+        private CheckBox _chkCheckAllUserViews;
+
+
         private IEnumerable<Entity> _systemViewOnUserEntity;
 
         #region Default Methods
@@ -40,7 +47,33 @@ namespace ReplaceAttributeXmPlugin
         {
             CloseTool();
         }
-       
+
+        private void ResetAllCheckBox()
+        {
+            if (_chkCheckAllSystemForms != null)
+            {
+                _chkCheckAllSystemForms.Text = CheckBoxTitleStrings.AllSystemForms;
+                _chkCheckAllSystemForms.Checked = false;
+                _chkCheckAllSystemForms.Enabled = false;
+            }
+            if (_chkCheckAllSystemViews != null)
+            {
+                _chkCheckAllSystemViews.Text = CheckBoxTitleStrings.AllSystemViews;
+                _chkCheckAllSystemViews.Checked = false;
+                _chkCheckAllSystemViews.Enabled = false;
+            }
+            if (_chkCheckAllSystemUsers != null)
+            {
+                _chkCheckAllSystemUsers.Text = CheckBoxTitleStrings.AllSystemUsers;
+                _chkCheckAllSystemUsers.Checked = false;
+                _chkCheckAllSystemUsers.Visible = false;
+            }
+            if (_chkCheckAllUserViews == null) return;
+            _chkCheckAllUserViews.Text = CheckBoxTitleStrings.AllSystemUsersView;
+            _chkCheckAllUserViews.Checked = false;
+            _chkCheckAllUserViews.Enabled = false;
+            _chkCheckAllUserViews.Visible = false;
+        }
 
         /// <summary>
         /// This event occurs when the connection has been updated in XrmToolBox
@@ -53,9 +86,7 @@ namespace ReplaceAttributeXmPlugin
             listViewAttributesReplaced.Items.Clear();
             listViewView.Items.Clear();
             listViewForms.Items.Clear();
-            tbCheckAllSystemForms.Text = @"Check All Forms";
-            TbCheckAllSystemViews.Text = @"Check All Views";
-
+            ResetAllCheckBox();
         }
         #endregion
 
@@ -207,16 +238,16 @@ namespace ReplaceAttributeXmPlugin
                                     var formType = objFormEntity.FormattedValues["type"];
                                     if (_formListViewGroup.All(o => o.Name != formType))
                                     {
-                                        @group = new ListViewGroup(formType)
+                                        group = new ListViewGroup(formType)
                                         {
                                             Name = formType,
                                             Tag = "FormType"
                                         };
-                                        _formListViewGroup.Add(@group);
+                                        _formListViewGroup.Add(group);
                                     }
                                     else
                                     {
-                                        @group = _formListViewGroup.FirstOrDefault(o => o.Name == formType);
+                                        group = _formListViewGroup.FirstOrDefault(o => o.Name == formType);
                                     }
                                 }
                                 var lvItem = new ListViewItem()
@@ -226,7 +257,7 @@ namespace ReplaceAttributeXmPlugin
                                     StateImageIndex = 0,
                                     Text = displayName,
                                     Tag = objFormEntity,  // stash the template here so we can view details later
-                                    Group = @group
+                                    Group = group
                                 };
                                 var state = ((bool)objFormEntity["ismanaged"]) ? "Managed" : "Unmanaged";
                                 lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, state) { Tag = "State", Name = @"State" });
@@ -234,7 +265,9 @@ namespace ReplaceAttributeXmPlugin
                             }
                             listViewForms.Groups.AddRange(_formListViewGroup.ToArray<ListViewGroup>());
                             listViewForms.Items.AddRange(_formsListViewItemsColl.ToArray<ListViewItem>());
-                            tbCheckAllSystemForms.Enabled = _formsListViewItemsColl.Count > 0;
+                            _chkCheckAllSystemForms.Enabled = _formsListViewItemsColl.Count > 0;
+                            _chkCheckAllSystemForms.Visible = _formsListViewItemsColl.Count > 0;
+                            tssSeparator6.Visible = _formsListViewItemsColl.Count > 0;
                             ExecuteMethod(LoadViewDependency);
                         }
                     }
@@ -274,14 +307,24 @@ namespace ReplaceAttributeXmPlugin
 
                             foreach (var objViewEntity in viewEntities)
                             {
-                                var layoutXml = (string)objViewEntity["layoutxml"];
-                                var isFound = XmlOperation.FindXmlControl(layoutXml, attributeName, "cell", "name");
+                                string layoutXml;
+                                var isFound = false;
+                                if (objViewEntity.Attributes.Contains("layoutxml"))
+                                {
+                                    layoutXml = (string) objViewEntity["layoutxml"];
+                                    isFound = XmlOperation.FindXmlControl(layoutXml, attributeName, "cell", "name");
+                                }
                                 if (!isFound)
                                 {
-                                    layoutXml = (string)objViewEntity["fetchxml"];
-                                    isFound = XmlOperation.FindXmlControl(layoutXml, attributeName, "attribute", "name");
-                                    if (!isFound)
-                                        isFound = XmlOperation.FindXmlControl(layoutXml, attributeName, "condition", "attribute");
+                                    if (objViewEntity.Attributes.Contains("fetchxml"))
+                                    {
+                                        layoutXml = (string) objViewEntity["fetchxml"];
+                                        isFound = XmlOperation.FindXmlControl(layoutXml, attributeName, "attribute",
+                                            "name");
+                                        if (!isFound)
+                                            isFound = XmlOperation.FindXmlControl(layoutXml, attributeName, "condition",
+                                                "attribute");
+                                    }
                                 }
 
                                 if (!isFound) continue;
@@ -327,6 +370,27 @@ namespace ReplaceAttributeXmPlugin
                                         }
                                     }
                                 }
+                                else if (objViewEntity.Attributes.Contains("fetchxml"))
+                                {
+                                    var columnXml = (string)objViewEntity.Attributes["fetchxml"];
+                                    if (columnXml.IndexOf(attributeName, StringComparison.Ordinal) >= 0)
+                                    {
+                                        if (_viewListViewGroup.All(o => o.Name != "FetchXML"))
+                                        {
+                                            group = new ListViewGroup("Fetch XML")
+                                            {
+                                                Name = "FetchXML",
+                                                Tag = "FetchXML"
+                                            };
+                                            _viewListViewGroup.Add(group);
+                                        }
+                                        else
+                                        {
+                                            group = _viewListViewGroup.FirstOrDefault(o => o.Name == "FetchXML");
+                                        }
+                                    }
+                                }
+
                                 var lvItem = new ListViewItem()
                                 {
                                     Name = @"Name",
@@ -340,7 +404,9 @@ namespace ReplaceAttributeXmPlugin
                                 lvItem.SubItems.Add(new ListViewItem.ListViewSubItem(lvItem, state) { Tag = "State", Name = @"State" });
                                 _viewListViewItemsColl.Add(lvItem);
                             }
-                            TbCheckAllSystemViews.Enabled = _viewListViewItemsColl.Count > 0;
+                            _chkCheckAllSystemViews.Enabled = _viewListViewItemsColl.Count > 0;
+                            _chkCheckAllSystemViews.Visible = _viewListViewItemsColl.Count > 0;
+                            //tssSeparator7.Visible = _viewListViewItemsColl.Count > 0;
                             listViewView.Groups.AddRange(_viewListViewGroup.ToArray<ListViewGroup>());
                             listViewView.Items.AddRange(_viewListViewItemsColl.ToArray<ListViewItem>());
 
@@ -418,30 +484,49 @@ namespace ReplaceAttributeXmPlugin
         #endregion
         private void ToolStripButton1_Click(object sender, EventArgs e)
         {
+            tbLoadDependency.Enabled = false;
+            tbDeleteSelectedDependency.Enabled = false;
+            tbReplaceSelectedDependency.Enabled = false;
+            ResetAllCheckBox();
+            listViewAttributes.Items.Clear();
+            listViewAttributesReplaced.Items.Clear();
+            listViewForms.Items.Clear();
+            listViewView.Items.Clear();
             ExecuteMethod(LoadEntities);
         }
         private void ListViewEntities_SelectedIndexChanged(object sender, EventArgs e)
         {
+            tabMainDetails.TabPages.Remove(tabUserView);
+            tbLoadDependency.Enabled = false;
+            tbDeleteSelectedDependency.Enabled = false;
+            tbReplaceSelectedDependency.Enabled = false;
+            listViewAttributes.Items.Clear();
+            listViewAttributesReplaced.Items.Clear();
+            listViewForms.Items.Clear();
+            listViewView.Items.Clear();
+            ResetAllCheckBox();
             ExecuteMethod(LoadAttributes);
         }
         private void ListViewAttributes_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (listViewAttributes.SelectedItems.Count <= 0) return;
             tbLoadDependency.Enabled = true;
-            tabUserView.Visible = true;
-
-
-            //TbLoadUserView.Enabled = true;
+            if (tabMainDetails.TabPages.Count == 1)
+                tabMainDetails.TabPages.Add(tabUserView);
 
             TxtSearchReplaceAttributeList.Text = "";
-            tbCheckAllSystemForms.Text = @"Check All Forms";
-            TbCheckAllSystemViews.Text = @"Check All Views";
-            TbCheckAllUserViews.Text = @"Check All User Views";
+            _chkCheckAllSystemForms.Text = CheckBoxTitleStrings.AllSystemForms;
+            _chkCheckAllSystemViews.Text = CheckBoxTitleStrings.AllSystemViews;
+            _chkCheckAllUserViews.Text = CheckBoxTitleStrings.AllSystemUsersView;
 
-           
-            tbCheckAllSystemForms.Enabled = false;
-            TbCheckAllSystemViews.Enabled = false;
-            TbCheckAllUserViews.Enabled = false;
+            _chkCheckAllSystemForms.Checked = false;
+            _chkCheckAllSystemViews.Checked = false;
+            _chkCheckAllUserViews.Checked = false;
+            _chkCheckAllSystemUsers.Checked = false;
+          
+            _chkCheckAllSystemForms.Enabled = false;
+            _chkCheckAllSystemViews.Enabled = false;
+            _chkCheckAllUserViews.Enabled = false;
 
             listViewAttributesReplaced.Items.Clear();
             listViewForms.Items.Clear();
@@ -479,14 +564,14 @@ namespace ReplaceAttributeXmPlugin
                 };
                 if (typeGroups.Count > 0)
                 {
-                    if (!typeGroups.Contains(@group))
+                    if (!typeGroups.Contains(group))
                     {
-                        typeGroups.Add(@group);
+                        typeGroups.Add(group);
                     }
                 }
                 else
                 {
-                    typeGroups.Add(@group);
+                    typeGroups.Add(group);
                 }
 
                 var lvItem = new ListViewItem()
@@ -508,7 +593,7 @@ namespace ReplaceAttributeXmPlugin
                 {
                     if (!isGroupAdd)
                     {
-                        listViewAttributesReplaced.Groups.Add(@group);
+                        listViewAttributesReplaced.Groups.Add(group);
                         isGroupAdd = true;
                     }
                     lvItem.BackColor = Color.GreenYellow;
@@ -518,9 +603,9 @@ namespace ReplaceAttributeXmPlugin
             }
             SortList(listViewAttributesReplaced);
 
-            foreach (var group in typeGroups.Where(group => @group.Name != attributeCurrent.AttributeTypeName.Value))
+            foreach (var group in typeGroups.Where(group => group.Name != attributeCurrent.AttributeTypeName.Value))
             {
-                listViewAttributesReplaced.Groups.Add(@group);
+                listViewAttributesReplaced.Groups.Add(group);
             }
             listViewAttributesReplaced.Items.AddRange(_attributeListViewItemsCollReplace.ToArray<ListViewItem>());
         }
@@ -752,52 +837,6 @@ namespace ReplaceAttributeXmPlugin
             groupBox5.Height = Convert.ToInt32(Height / 2.0 -5);
         }
 
-        private void TbCheckAllSystemForms_Click(object sender, EventArgs e)
-        {
-            if (tbCheckAllSystemForms.Text == @"Check All Forms")
-            {
-                CheckUnCheckToggle(tbCheckAllSystemForms, listViewForms, true);
-                tbCheckAllSystemForms.Text = @"Uncheck All Forms";
-            }
-            else
-            {
-                CheckUnCheckToggle(tbCheckAllSystemForms, listViewForms, false);
-                tbCheckAllSystemForms.Text = @"Check All Forms";
-            }
-        }
-
-        private void TbCheckAllSystemViews_Click(object sender, EventArgs e)
-        {
-            if (TbCheckAllSystemViews.Text == @"Check All Views")
-            {
-                CheckUnCheckToggle(TbCheckAllSystemViews, listViewView, true);
-                TbCheckAllSystemViews.Text = @"Uncheck All Views";
-            }
-            else
-            {
-                CheckUnCheckToggle(TbCheckAllSystemViews, listViewView, false);
-                TbCheckAllSystemViews.Text = @"Check All Views";
-            }
-        }
-
-        private void TbCheckAllSystemUsers_Click(object sender, EventArgs e)
-        {
-            if (TbCheckAllSystemUsers.Text == @"Check All Users")
-            {
-                CheckUnCheckToggle(TbCheckAllSystemUsers, listViewSystemUsers, true);
-                if (listViewEntities.SelectedItems.Count > 0 && listViewAttributes.SelectedItems.Count > 0)
-                    TbLoadUserView.Enabled = true;
-                TbCheckAllSystemUsers.Text = @"Unheck All Users";
-            }
-            else
-            {
-                CheckUnCheckToggle(TbCheckAllSystemUsers, listViewSystemUsers, false);
-                TbLoadUserView.Enabled = false;
-                TbCheckAllSystemUsers.Text = @"Check All Users";
-            }
-        }
-
-
         private void LoadSystemUser()
         {
             TxtSearchUsersList.Text = "";
@@ -849,8 +888,8 @@ namespace ReplaceAttributeXmPlugin
                         listViewSystemUsers.Items.AddRange(_usersListViewItemsColl.ToArray<ListViewItem>());
 
                         SortList(listViewSystemUsers);
-                        TbCheckAllSystemUsers.Visible = true;
-                        TbCheckAllSystemUsers.Enabled = true;
+                        _chkCheckAllSystemUsers.Visible = true;
+                        _chkCheckAllSystemUsers.Enabled = true;
                         TbLoadUserView.Visible = true;
                         listViewSystemUsers.ResumeLayout();
                         TxtSearchUsersList.Focus();
@@ -910,8 +949,8 @@ namespace ReplaceAttributeXmPlugin
                         listViewSystemUsers.Items.AddRange(_usersListViewItemsColl.ToArray<ListViewItem>());
 
                         SortList(listViewSystemUsers);
-                        TbCheckAllSystemUsers.Visible = true;
-                        TbCheckAllSystemUsers.Enabled = true;
+                        _chkCheckAllSystemUsers.Visible = true;
+                        _chkCheckAllSystemUsers.Enabled = true;
                         TbLoadUserView.Visible = true;
                         listViewSystemUsers.ResumeLayout();
                         
@@ -939,7 +978,8 @@ namespace ReplaceAttributeXmPlugin
                     {
                         TblstUserView.DropDownItems.Clear();
                         _systemViewOnUserEntity = (IEnumerable<Entity>)e.Result;
-                        foreach (var objUserEntity in _systemViewOnUserEntity)
+                        var systemViewOnUserEntity = _systemViewOnUserEntity as Entity[] ?? _systemViewOnUserEntity.ToArray();
+                        foreach (var objUserEntity in systemViewOnUserEntity)
                         {
                             var displayName = "";
                             if (objUserEntity.Attributes.Contains("name"))
@@ -948,8 +988,7 @@ namespace ReplaceAttributeXmPlugin
                             }
                             TblstUserView.DropDownItems.Add(displayName);
                         }
-
-                        TblstUserView.Enabled = true;
+                        TblstUserView.Enabled = systemViewOnUserEntity.Length > 0;
                     }
                 }
             });
@@ -957,13 +996,15 @@ namespace ReplaceAttributeXmPlugin
 
         private void TabMainDetaiils_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (tabMainDetaiils.SelectedTab == tabUserView)
+            if (tabMainDetails.SelectedTab == tabUserView)
             {
                 if (listViewSystemUsers.Items.Count == 0)
                 {
                     ExecuteMethod(LoadSystemUser);
                     ExecuteMethod(LoadSystemUserSystemViews);
                     TblstUserView.Text = @"Select User View";
+                    TblstUserView.Enabled = false;
+                    _chkCheckAllSystemUsers.Enabled = true;
                     listViewViewUsers.Items.Clear();
                 }
                 ToggleTabButtonVisibility(false);
@@ -979,59 +1020,20 @@ namespace ReplaceAttributeXmPlugin
             tbLoadDependency.Visible = currentState;
             tbDeleteSelectedDependency.Visible = currentState;
             tbReplaceSelectedDependency.Visible = currentState;
-            tbCheckAllSystemForms.Visible = currentState;
-            TbCheckAllSystemViews.Visible = currentState;
-            tssSeparator2.Visible = currentState;
-            tssSeparator3.Visible = currentState;
-            tssSeparator4.Visible = currentState;
-            tssSeparator5.Visible = currentState;
-            tssSeparator6.Visible = currentState;
-           // tssSeparator7.Visible = currentState;
-
+            _chkCheckAllSystemForms.Visible = currentState;
+            _chkCheckAllSystemViews.Visible = currentState;
+            tssSeparator6.Visible = true;
+            tssSeparator7.Visible = !currentState;
+            tssSeparator8.Visible = true;
             TblstUserView.Visible = !currentState;
             TbLoadUserView.Visible = !currentState;
             tbDeleteSelectedUserDependency.Visible = !currentState;
             tbReplaceSelectedUserDependency.Visible = !currentState;
-            TbCheckAllSystemUsers.Visible = !currentState;
-            TbCheckAllUserViews.Visible = !currentState;
-            tssSeparator8.Visible = !currentState;
-            tssSeparator9.Visible = !currentState;
-            tssSeparator10.Visible = !currentState;
-            tssSeparator11.Visible = !currentState;
-            tssSeparator12.Visible = !currentState;
-            tssSeparator13.Visible = !currentState;
+            _chkCheckAllSystemUsers.Visible = !currentState;
+            _chkCheckAllUserViews.Visible = !currentState;
         }
 
-        private void CheckUnCheckToggle(ToolStripItem toogleButton, ListView listView,bool currentState)
-        {
-            _itemCheckedEvnt = true;
-            foreach (ListViewItem item in listView.Items)
-            {
-                item.Checked = currentState;
-            }
-            _itemCheckedEvnt = false;
-            toogleButton.Image = currentState ? Properties.Resources.check_all : Properties.Resources.uncheck_all;
-        }
-
-        private void TbCheckAllUserViews_Click(object sender, EventArgs e)
-        {
-            if (TbCheckAllUserViews.Text == @"Check All User Views")
-            {
-                CheckUnCheckToggle(TbCheckAllUserViews, listViewViewUsers, true);
-                TbCheckAllUserViews.Text = @"Uncheck All User Views";
-                if (listViewEntities.SelectedItems.Count > 0 && listViewAttributes.SelectedItems.Count > 0)
-                    tbDeleteSelectedUserDependency.Enabled = true;
-                if (listViewAttributesReplaced.SelectedItems.Count > 0)
-                    tbReplaceSelectedUserDependency.Enabled = true;
-            }
-            else
-            {
-                CheckUnCheckToggle(TbCheckAllUserViews, listViewViewUsers, false);
-                TbCheckAllUserViews.Text = @"Check All User Views";
-                tbDeleteSelectedUserDependency.Enabled = false;
-                tbReplaceSelectedUserDependency.Enabled = false;
-            }
-        }
+        
 
         private void TbLoadUserView_Click(object sender, EventArgs e)
         {
@@ -1039,8 +1041,6 @@ namespace ReplaceAttributeXmPlugin
         }
         private void LoadUsersViews()
         {
-            TbCheckAllUserViews.Text = @"Check All User Views";
-            TbCheckAllUserViews.Enabled = true;
             _viewListUserViewGroup = new List<ListViewGroup>();
             _viewListUserViewItemsColl = new List<ListViewItem>();
             listViewViewUsers.Items.Clear();
@@ -1091,6 +1091,11 @@ namespace ReplaceAttributeXmPlugin
                                     if (checkedItems.Any(c => c.CheckItemProcessed == false)) return;
                                     listViewViewUsers.Groups.AddRange(_viewListUserViewGroup.ToArray<ListViewGroup>());
                                     listViewViewUsers.Items.AddRange(_viewListUserViewItemsColl.ToArray<ListViewItem>());
+                                    if (listViewViewUsers.Items.Count > 0)
+                                    {
+                                        _chkCheckAllUserViews.Text = CheckBoxTitleStrings.AllSystemUsersView;
+                                        _chkCheckAllUserViews.Enabled = true;
+                                    }
                                     SortList(listViewViewUsers);
                                 }
                             }
@@ -1105,14 +1110,30 @@ namespace ReplaceAttributeXmPlugin
             var userFullName = systemUser.Attributes.Contains("fullname") ? (string)systemUser["fullname"] : "";
             foreach (var objViewEntity in userViews)
             {
-                var layoutXml = (string)objViewEntity["layoutxml"];
-                var isFound = XmlOperation.FindXmlControl(layoutXml, objUserViewRequest.AttributeSelected, "cell", "name");
-                if (!isFound)
+                var isFound = false;
+                if (objViewEntity.Attributes.Contains("layoutxml"))
                 {
-                    layoutXml = (string)objViewEntity["fetchxml"];
-                    isFound = XmlOperation.FindXmlControl(layoutXml, objUserViewRequest.AttributeSelected, "attribute", "name");
+                    var layoutXml = (string) objViewEntity["layoutxml"];
+                    isFound = XmlOperation.FindXmlControl(layoutXml, objUserViewRequest.AttributeSelected, "cell",
+                        "name");
                     if (!isFound)
-                        isFound = XmlOperation.FindXmlControl(layoutXml, objUserViewRequest.AttributeSelected, "condition", "attribute");
+                    {
+                        layoutXml = (string) objViewEntity["fetchxml"];
+                        isFound = XmlOperation.FindXmlControl(layoutXml, objUserViewRequest.AttributeSelected,
+                            "attribute", "name");
+                        if (!isFound)
+                            isFound = XmlOperation.FindXmlControl(layoutXml, objUserViewRequest.AttributeSelected,
+                                "condition", "attribute");
+                    }
+                }
+                else if (objViewEntity.Attributes.Contains("fetchxml"))
+                {
+                    var layoutXml = (string) objViewEntity["fetchxml"];
+                    isFound = XmlOperation.FindXmlControl(layoutXml, objUserViewRequest.AttributeSelected,
+                        "attribute", "name");
+                    if (!isFound)
+                        isFound = XmlOperation.FindXmlControl(layoutXml, objUserViewRequest.AttributeSelected,
+                            "condition", "attribute");
                 }
 
                 if (!isFound) continue;
@@ -1151,8 +1172,98 @@ namespace ReplaceAttributeXmPlugin
 
         private void ReplaceAttributeControl_Load(object sender, EventArgs e)
         {
-            TbLoadUserView.Visible = false;
+            if (_chkCheckAllSystemForms == null)
+            {
+                _chkCheckAllSystemForms = BindCheckBox(CheckBoxTitleStrings.AllSystemForms, listViewForms, 14);
+                _chkCheckAllSystemForms.Visible = false;
+                tssSeparator6.Visible = false;
+            }
+            if (_chkCheckAllSystemViews == null)
+            {
+                _chkCheckAllSystemViews = BindCheckBox(CheckBoxTitleStrings.AllSystemViews, listViewView, 16);
+                _chkCheckAllSystemViews.Visible = false;
+                tssSeparator7.Visible = false;
+            }
+
+            if (_chkCheckAllSystemUsers == null)
+            {
+                _chkCheckAllSystemUsers = BindCheckBox(CheckBoxTitleStrings.AllSystemUsers, listViewSystemUsers, 17);
+                _chkCheckAllSystemUsers.Visible = false;
+            }
+
+            if (_chkCheckAllUserViews == null)
+            {
+                _chkCheckAllUserViews = BindCheckBox(CheckBoxTitleStrings.AllSystemUsersView, listViewViewUsers, 19);
+                _chkCheckAllUserViews.Visible = false;
+            }
+            tabMainDetails.TabPages.Remove(tabUserView);
         }
+
+        private CheckBox BindCheckBox(string checkText, IDisposable listView, int position)
+        {
+            var chkControl = new CheckBox {Text = checkText};
+            chkControl.CheckStateChanged += CheckStageChanged;
+            chkControl.BackColor = Color.Transparent;
+            chkControl.Padding = new Padding(5);
+            chkControl.Tag = listView;
+            chkControl.Enabled = false;
+            //chkControl.Visible = false;
+            var host = new ToolStripControlHost(chkControl);
+            toolStripMenu.Items.Insert(position,host);
+            return chkControl;
+        }
+
+        private void CheckStageChanged(object sender, EventArgs e)
+        {
+            var checkState = (CheckBox) sender;
+            if (checkState.Text == CheckBoxTitleStrings.AllSystemUsers)
+            {
+                if (listViewSystemUsers.Items.Count > 0)
+                    TbLoadUserView.Enabled = true;
+            }
+            else if (checkState.Text == CheckBoxTitleStrings.AllSystemUsersCheck)
+            {
+                TbLoadUserView.Enabled = false;
+            }
+            if (checkState.Text == CheckBoxTitleStrings.AllSystemUsersView)
+            {
+                if (listViewViewUsers.Items.Count > 0)
+                {
+                    if (listViewEntities.SelectedItems.Count > 0 && listViewAttributes.SelectedItems.Count > 0)
+                        tbDeleteSelectedUserDependency.Enabled = true;
+                    if (listViewAttributesReplaced.SelectedItems.Count > 0)
+                        tbReplaceSelectedUserDependency.Enabled = true;
+                }
+            }
+            else if (checkState.Text == CheckBoxTitleStrings.AllSystemUsersViewCheck)
+            {
+                tbDeleteSelectedUserDependency.Enabled = false;
+                tbReplaceSelectedUserDependency.Enabled = false;
+            }
+
+            if (checkState.Checked)
+            {
+                CheckUnCheckToggle((ListView) checkState.Tag, true);
+                checkState.Text = checkState.Text.Replace(@"Check", @"Uncheck");
+            }
+            else
+            {
+                CheckUnCheckToggle((ListView) checkState.Tag, false);
+                checkState.Text = checkState.Text.Replace(@"Uncheck", @"Check");
+            }
+
+        }
+
+        private void CheckUnCheckToggle(ListView listView,bool currentState)
+        {
+            _itemCheckedEvnt = true;
+            foreach (ListViewItem item in listView.Items)
+            {
+                item.Checked = currentState;
+            }
+            _itemCheckedEvnt = false;
+        }
+
 
         private void ListViewSystemUsers_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
@@ -1171,7 +1282,7 @@ namespace ReplaceAttributeXmPlugin
             TbLoadUserView.Enabled = false;
             tbDeleteSelectedUserDependency.Enabled = false;
             tbReplaceSelectedUserDependency.Enabled = false;
-            TbCheckAllUserViews.Enabled = false;
+            _chkCheckAllUserViews.Enabled = false;
             LoadSystemUser((string) selectedView["fetchxml"]);
         }
 
@@ -1231,14 +1342,25 @@ namespace ReplaceAttributeXmPlugin
             XmlOperation.TaskCompletedCallBack callback = CallBackAfterOperation;
             XmlOperation.ReplaceViewDependency(objRequest, callback);
         }
+
         private void CallBackAfterOperation(XmlRequest request)
         {
-            LoadUsersViews();
+            MessageBox.Show(@"User View update complete");
         }
 
-        private void listViewSystemUsers_SelectedIndexChanged(object sender, EventArgs e)
-        {
+       
 
+        private void TxtSearchUsersList_TextChanged(object sender, EventArgs e)
+        {
+            var searchList = _usersListViewItemsColl.Where(l => l.SubItems[0].Text.ToUpper().Contains(TxtSearchUsersList.Text.ToUpper()));
+            listViewSystemUsers.Items.Clear();
+            listViewSystemUsers.Items.AddRange(searchList.ToArray());
+        }
+
+        private void listViewSystemUsers_ColumnClick(object sender, ColumnClickEventArgs e)
+        {
+            listViewSystemUsers.Sorting = ((listViewSystemUsers.Sorting == SortOrder.Ascending) ? SortOrder.Descending : SortOrder.Ascending);
+            listViewSystemUsers.ListViewItemSorter = new ListViewItemComparer(e.Column, listViewSystemUsers.Sorting);
         }
     }
 }
